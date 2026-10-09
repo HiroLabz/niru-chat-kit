@@ -1,0 +1,99 @@
+{
+  "name": "@hiro/niru-chat-kit",
+  "version": "0.1.0",
+  "description": "Streaming chat kit: a UI-library-free core and an MUI skin, modelled on prompt-kit.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mui": {
+      "types": "./dist/mui/index.d.ts",
+      "import": "./dist/mui/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HiroLabz/niru-chat-kit.git"
+  },
+  "homepage": "https://github.com/HiroLabz/niru-chat-kit#readme",
+  "bugs": {
+    "url": "https://github.com/HiroLabz/niru-chat-kit/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepare": "pnpm run build"
+  },
+  "peerDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.2",
+    "katex": "^0.19.0",
+    "marked": "^18.0.14",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^9.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "shiki": "^4.5.0"
+  },
+  "peerDependenciesMeta": {
+    "katex": {
+      "optional": true
+    },
+    "rehype-katex": {
+      "optional": true
+    },
+    "remark-math": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.2",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "jsdom": "^29.1.1",
+    "katex": "^0.19.0",
+    "marked": "^18.0.14",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^9.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "shiki": "^4.5.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
+  }
+}
