@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { FEEDBACK_COPY, TURN_ACTION_COPY } from "../../core/stream/turn-copy";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { DELETE_CONFIRM_COPY, FEEDBACK_COPY, TURN_ACTION_COPY } from "../../core/stream/turn-copy";
 import type { ChatMessage, ChatTurnActions } from "../../core/types";
 import { TurnActions } from "./turn-actions";
 
@@ -144,5 +144,63 @@ describe("TurnActions", () => {
     expect(container).toBeEmptyDOMElement();
     rerender(<TurnActions message={{ ...reply, pending: true }} actions={handlers} onStartEdit={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("draws the app's extra actions in the same row as Copy and Regenerate, for an assistant reply only", () => {
+    const renderExtraActions = (m: ChatMessage) => <button type="button">Extra for {m.id}</button>;
+    const full = actions({ onCopy: vi.fn().mockResolvedValue(undefined), onRegenerate: vi.fn(), renderExtraActions });
+    const { container, rerender } = render(<TurnActions message={reply} actions={full} onStartEdit={vi.fn()} />);
+    const copy = screen.getByRole("button", { name: TURN_ACTION_COPY.copy });
+    const extra = screen.getByRole("button", { name: "Extra for a1" });
+    expect(copy.parentElement?.parentElement).toBe(extra.parentElement);
+    expect(container.children).toHaveLength(1);
+    rerender(<TurnActions message={question} actions={full} onStartEdit={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: /Extra for/ })).not.toBeInTheDocument();
+  });
+
+  it("draws the extra actions on a reply with no server id too", () => {
+    render(
+      <TurnActions
+        message={{ id: "w1", role: "assistant", text: "Widget answer" }}
+        actions={actions({ renderExtraActions: () => <button type="button">Save</button> })}
+        onStartEdit={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
+});
+
+describe("TurnActions delete", () => {
+  it("shows no Delete without onDelete", () => {
+    render(<TurnActions message={reply} actions={actions({ onRegenerate: vi.fn() })} onStartEdit={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: DELETE_CONFIRM_COPY.action })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["assistant", reply],
+    ["user", question],
+  ])("deletes a %s turn only after the confirm", async (_name, message) => {
+    const onDelete = vi.fn();
+    render(<TurnActions message={message} actions={actions({ onDelete })} onStartEdit={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: DELETE_CONFIRM_COPY.action }));
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: DELETE_CONFIRM_COPY.cancel }));
+    expect(onDelete).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole("button", { name: DELETE_CONFIRM_COPY.action }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: DELETE_CONFIRM_COPY.confirm }));
+    expect(onDelete).toHaveBeenCalledWith(message);
+  });
+
+  it("also offers Delete on a turn without a server id", () => {
+    const local: ChatMessage = { id: "a9", role: "assistant", text: "Local" };
+    render(<TurnActions message={local} actions={actions({ onDelete: vi.fn() })} onStartEdit={vi.fn()} />);
+    expect(screen.getByRole("button", { name: DELETE_CONFIRM_COPY.action })).toBeInTheDocument();
+  });
+
+  it("disables Delete while the surface is busy", () => {
+    render(<TurnActions message={reply} actions={actions({ disabled: true, onDelete: vi.fn() })} onStartEdit={vi.fn()} />);
+    expect(screen.getByRole("button", { name: DELETE_CONFIRM_COPY.action })).toBeDisabled();
   });
 });

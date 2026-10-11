@@ -67,6 +67,8 @@ export type ConversationTurnProps = {
   onStop?: () => void;
   /** An app's own blocks under the answer (a structured-output card, for example). Keep its identity stable: the turn is memoised. */
   renderExtras?: (message: ChatMessage) => ReactNode;
+  /** An app's own blocks on the user's turn, drawn above the bubble (the files it sent). Keep its identity stable. */
+  renderUserExtras?: (message: ChatMessage) => ReactNode;
   /** Fetches a generated file; without it file chips show no Download button. */
   onDownloadFile?: FileDownloader;
 };
@@ -89,6 +91,7 @@ export const ConversationTurn = memo(function ConversationTurn({
   actions,
   onStop,
   renderExtras,
+  renderUserExtras,
   onDownloadFile,
 }: ConversationTurnProps) {
   const { scheme } = useChatKitStyles();
@@ -128,6 +131,7 @@ export const ConversationTurn = memo(function ConversationTurn({
       {message.spoken && isUser ? <SpokenMark /> : null}
       {isUser ? null : avatar === undefined ? <Message.Avatar initial={agentInitial} /> : avatar}
       <Box
+        data-chat="turn-body"
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -164,6 +168,7 @@ export const ConversationTurn = memo(function ConversationTurn({
             <TurnSteps steps={message.steps} pending={Boolean(message.pending)} />
           </Box>
         ) : null}
+        {isUser ? renderUserExtras?.(message) : null}
         {echoesStructuredOutput || isEditing || settledEmpty ? null : showDots && onStop ? (
           // While a reply is pending with a cancel path offered, the turn has no content yet
           // to put a bubble around: a bubble plus an outlined Stop button read as chrome around
@@ -186,7 +191,11 @@ export const ConversationTurn = memo(function ConversationTurn({
         {isUser ? null : <FileChipList files={filesOfTurn(message)} onDownload={onDownloadFile} />}
         {isUser ? null : <MessageNotes message={message} />}
         {message.at ? (
-          <Typography variant="caption" sx={scheme((c) => ({ mt: 0.25, fontSize: 12, color: c.mutedText }))}>
+          <Typography
+            variant="caption"
+            data-chat-timestamp=""
+            sx={scheme((c) => ({ mt: 0.25, fontSize: 12, color: c.mutedText }))}
+          >
             {formatTimestamp(message.at)}
           </Typography>
         ) : null}

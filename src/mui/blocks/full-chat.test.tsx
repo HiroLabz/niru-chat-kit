@@ -46,6 +46,21 @@ describe("FullChat", () => {
     expect(current.send).toHaveBeenCalledWith("Tell me more");
   });
 
+  it("passes composer toggles through to the composer", () => {
+    const onToggle = vi.fn();
+    render(
+      <FullChat
+        stream={stream()}
+        agent={agent}
+        toggles={[{ id: "web", label: "Search the web", icon: null, active: false, onToggle }]}
+      />,
+    );
+    const toggle = screen.getByRole("button", { name: "Search the web" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(toggle);
+    expect(onToggle).toHaveBeenCalled();
+  });
+
   it("shows the error with Retry, or the app's own action", () => {
     const current = stream({ error: "Connection failed" });
     const { rerender } = render(<FullChat stream={current} agent={agent} />);
@@ -92,5 +107,62 @@ describe("FullChat", () => {
     );
     fireEvent.click(screen.getByText("Earlier chat"));
     expect(onSelect).toHaveBeenCalledWith("c1");
+  });
+
+  it("draws the app's avatar instead of an initial when renderAvatar is given", () => {
+    const renderAvatar = (size: number) => <span role="img" aria-label="Face" data-size={size} />;
+    const { rerender } = render(<FullChat stream={stream()} agent={{ name: "Helper", initial: "" }} renderAvatar={renderAvatar} />);
+    expect(screen.getByRole("img", { name: "Face" })).toHaveAttribute("data-size", "44");
+    rerender(
+      <FullChat
+        stream={stream({ messages: [{ id: "a1", role: "assistant", text: "Hello" }] })}
+        agent={{ name: "Helper", initial: "" }}
+        renderAvatar={renderAvatar}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Face" })).toHaveAttribute("data-size", "28");
+  });
+
+  it("renders with a column width and keeps the composer working", () => {
+    const current = stream();
+    render(<FullChat stream={current} agent={agent} columnMaxWidth={760} />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Hello" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(current.send).toHaveBeenCalledWith("Hello");
+  });
+
+  it("shows a supplied emptyState instead of the greeting", () => {
+    render(<FullChat stream={stream()} agent={agent} greeting="Hi there" emptyState={<h2>My hello</h2>} />);
+    expect(screen.getByRole("heading", { name: "My hello" })).toBeInTheDocument();
+    expect(screen.queryByText("Hi there")).toBeNull();
+  });
+
+  it("forwards the call props to the composer", () => {
+    const onStartCall = vi.fn();
+    render(<FullChat stream={stream()} agent={agent} onStartCall={onStartCall} callLabel="Call me" />);
+    fireEvent.click(screen.getByRole("button", { name: "Call me" }));
+    expect(onStartCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders aboveComposer between the pills and the composer", () => {
+    render(<FullChat stream={stream()} agent={agent} starters={["Pick me"]} columnMaxWidth={760} aboveComposer={<div data-testid="strip" />} />);
+    const strip = screen.getByTestId("strip");
+    const pill = screen.getByRole("button", { name: "Pick me" });
+    const box = screen.getByRole("textbox");
+    expect(pill.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(strip.compareDocumentPosition(box) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("renders aboveComposer above the interrupt card too", () => {
+    render(
+      <FullChat
+        stream={stream({ status: "needs_input", interrupt: { kind: "ask_user", question: "Which date?" } })}
+        agent={agent}
+        aboveComposer={<div data-testid="strip" />}
+      />,
+    );
+    expect(screen.getByTestId("strip")).toBeInTheDocument();
+    expect(document.querySelector('[data-chat="composer-wrap"]')).toBeNull();
+    expect(screen.getByText("Which date?")).toBeInTheDocument();
   });
 });

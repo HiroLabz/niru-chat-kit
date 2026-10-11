@@ -162,6 +162,10 @@ export type ChatTurnActions = {
   /** Thumbs up/down on a settled assistant turn; absent on a surface that offers
    *  no feedback (`FeedbackBar` then never renders). */
   onFeedback?: (messageId: string, rating: FeedbackRating) => Promise<void>;
+  /** Extra controls an app draws in the same row as Copy and Regenerate, after them, for a settled assistant reply. Absent: nothing added. */
+  renderExtraActions?: (message: ChatMessage) => ReactNode;
+  /** Deletes a message. Absent: no Delete control. When given, the kit asks for a confirm before calling it, on user and assistant turns. */
+  onDelete?: (message: ChatMessage) => void;
 };
 
 export type AgentStreamStatus =

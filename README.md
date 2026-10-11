@@ -1,48 +1,80 @@
 # @hiro/niru-chat-kit
 
-A streaming chat kit for React, modelled on [prompt-kit](https://github.com/ibelick/prompt-kit).
-It has two layers:
+niru-chat-kit gives you a working AI chat for your React app: the message list, the box people type in, streaming replies, tool steps, sources and more. It is modelled on [prompt-kit](https://github.com/ibelick/prompt-kit).
 
-- `@hiro/niru-chat-kit` (core): stream parsing, the frame-to-turn reducer, steps, copy text,
-  follow-ups, branches, approvals and the `useChatStream` hook. No UI library, no knowledge of any URL.
-- `@hiro/niru-chat-kit/mui` (MUI skin): compound parts, ready-made blocks, `JSXPreview` and the
-  token provider. A shadcn skin that shares the same core and token names is planned.
+It has two parts:
+
+- `@hiro/niru-chat-kit` is the core. It handles the conversation: sending a message, reading the reply as it arrives, follow-up questions, branches, approvals and the `useChatStream` hook. It uses no UI library and knows no URL.
+- `@hiro/niru-chat-kit/mui` draws the conversation with Material UI components you can recolour. It has small building blocks, ready-made pieces, `JSXPreview` and the provider that holds your colours. A shadcn version that shares the same core is planned.
+
+Below is the short version: install the kit and get a chat on screen. The documentation site has a live demo and the full details.
 
 ## Install
 
-The package is installed straight from GitHub. The build runs on install (`prepare`), so the
-published `dist` is produced for you. Pin a tag.
+The kit is not on npm. You install it from GitHub, and your package manager builds it during the install. Pin a tag or a commit so every install gets the same code.
 
 ```sh
-pnpm add github:HiroLabz/niru-chat-kit#v0.1.0
-npm install github:HiroLabz/niru-chat-kit#v0.1.0
-yarn add HiroLabz/niru-chat-kit#v0.1.0
+pnpm add github:HiroLabz/niru-chat-kit#<tag-or-commit>
+npm install github:HiroLabz/niru-chat-kit#<tag-or-commit>
+yarn add HiroLabz/niru-chat-kit#<tag-or-commit>
 ```
 
-The build needs `tsup` and `typescript`, which the kit lists as dev dependencies. pnpm, npm and
-yarn install them for a git dependency before running `prepare`, so nothing extra is needed.
+The build needs `tsup` and `typescript`. The package lists them as dev dependencies and pnpm, npm and yarn install them for you before the build runs.
 
-Next.js: the package ships compiled ESM (`dist`) with type declarations, so `transpilePackages` is
-not required.
+### pnpm 10: allow the build step
+
+pnpm 10 refuses to run the build step of a dependency unless you allow it by name. For a package from GitHub the name includes the commit, so you have to give the full commit id. Without this, `pnpm add` stops with the error `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`, and the message shows the address pnpm wanted.
+
+1. Find the newest commit on `main`. The command prints a 40-character id.
+
+   ```sh
+   git ls-remote https://github.com/HiroLabz/niru-chat-kit.git refs/heads/main
+   ```
+
+2. In your app, create `pnpm-workspace.yaml` next to `package.json` (or open it if you have one) and add this, with your commit id in place of `<full-commit-sha>`.
+
+   ```yaml
+   allowBuilds:
+     '@hiro/niru-chat-kit@https://codeload.github.com/HiroLabz/niru-chat-kit/tar.gz/<full-commit-sha>': true
+   ```
+
+3. Install the kit with the same commit id.
+
+   ```sh
+   pnpm add github:HiroLabz/niru-chat-kit#<full-commit-sha>
+   ```
+
+   You should see the install finish without errors.
+
+The line names one commit, so when you move to a newer one, change the id in both places. If your app already uses `onlyBuiltDependencies` instead of `allowBuilds`, add the same address there. If you build in Docker, copy `pnpm-workspace.yaml` into the image before `pnpm install`. npm and yarn do not need this file.
+
+Next.js: the package ships compiled ES modules with type declarations, so you do not need `transpilePackages`.
 
 ## Peer dependencies
 
-Install these in your app:
+The kit expects your app to provide these libraries.
 
-- Required: `react`, `react-dom` (19), `@mui/material`, `@mui/icons-material`, `@emotion/react`,
-  `@emotion/styled`, `react-markdown`, `remark-gfm`, `marked`.
-- Optional, loaded on demand and skipped gracefully if missing: `shiki` (code highlighting; without
-  it code shows as plain text), `remark-math`, `rehype-katex` and `katex` (maths; without them the
-  source stays visible as plain markdown). Install all four to get maths.
+Required: `react` and `react-dom` (version 19), `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled`, `react-markdown`, `remark-gfm` and `marked`.
+
+```sh
+pnpm add @mui/material @mui/icons-material @emotion/react @emotion/styled react-markdown remark-gfm marked
+```
+
+Optional:
+
+- `shiki` colours code in replies. Without it, code still shows, as plain text.
+- `remark-math`, `rehype-katex` and `katex` draw maths. Without them the maths source shows as plain text. Install all three, or none.
 
 ## Quick start
+
+This is a complete chat. The one thing you supply is the transport: a small object that sends a message to your backend and hands back the reply as it streams in. `send()` resolves with a stream of frames (small labelled pieces of the reply). If your backend sends server-sent events, `parseSseStream` in the core turns the response into frames.
 
 ```tsx
 import { useChatStream, type ChatTransport } from "@hiro/niru-chat-kit";
 import { ChatKitProvider, Composer, Conversation } from "@hiro/niru-chat-kit/mui";
 import { useState } from "react";
 
-// You implement the transport: it is the only thing that knows your backend.
+// You write the transport. It is the only part that knows your backend.
 // send() resolves with an async iterable of stream frames (see parseSseStream
 // in the core entry if your backend speaks SSE).
 declare const transport: ChatTransport;
@@ -70,29 +102,29 @@ export function Chat() {
 }
 ```
 
-`ChatTransport` has `send`, `stop`, and optional `regenerate`, `resume` and `branches`. Frames are
-`status`, `token`, `tool`, `thinking`, `reasoning`, `suggestions`, `needs_input`, `result`, `error`
-and `done`.
+A `ChatTransport` has `send` and `stop`, and optionally `regenerate`, `resume` and `branches`. The frames it can send are `status`, `token`, `tool`, `thinking`, `reasoning`, `suggestions`, `needs_input`, `result`, `error` and `done`. The documentation site explains each one.
+
+If you would rather not lay out the chat yourself, use `FullChat`. It combines the message list, the message box and the history sidebar in one component.
 
 ## Tokens and theming
 
-Wrap the chat in `ChatKitProvider`. Defaults come from the MUI theme's light and dark palettes.
-`tokens` overrides any of them without touching a component, and every token is also written as a
-`--nck-*` CSS variable on the provider's root element.
+A token is a named colour or size, like `accent`, that every part of the chat reads when it draws itself. Change a token once and everything that uses it changes.
 
-| Token | Meaning |
+Wrap the chat in `ChatKitProvider`. Defaults come from the light and dark palettes of your MUI theme. The `tokens` prop overrides any of them without touching a component, and each token is also published as a CSS variable named `--nck-` plus its name, on the provider's root element.
+
+| Token | What it controls |
 |---|---|
-| `accent`, `accentContrast` | Primary action colour and the text on it |
-| `text`, `mutedText`, `surface`, `border`, `muted` | Body text, secondary text, page surface, rules, hover fill |
-| `assistantSurface`, `assistantText` | Assistant bubble and avatar |
-| `userBubble`, `userBubbleText` | User bubble |
-| `codeSurface`, `codeInlineSurface` | Fenced block, inline code |
-| `info`, `success`, `warning`, `error` | Status colours |
-| `radius`, `bubbleRadius` | Corner radii in px |
-| `fontFamily`, `monoFontFamily` | Fonts |
-| `codeThemeLight`, `codeThemeDark` | Shiki theme names |
+| `accent`, `accentContrast` | The main colour (buttons, links) and the text on it |
+| `text`, `mutedText`, `surface`, `border`, `muted` | Normal text, quieter text, the chat background, thin lines, the background on hover |
+| `assistantSurface`, `assistantText` | The assistant's bubble and avatar |
+| `userBubble`, `userBubbleText` | The bubble around your own messages |
+| `codeSurface`, `codeInlineSurface` | Code blocks, and short code inside a sentence |
+| `info`, `success`, `warning`, `error` | Colours for status messages |
+| `radius`, `bubbleRadius` | How round corners are, in pixels |
+| `fontFamily`, `monoFontFamily` | The font for text and the font for code |
+| `codeThemeLight`, `codeThemeDark` | Names of the colour themes used for code (Shiki is the library that colours it) |
 
-A colour set at the top level applies to both schemes; set it under `light` or `dark` for one.
+A colour set at the top level applies to both light and dark mode. Put it under `light` or `dark` to change one mode only.
 
 ```tsx
 <ChatKitProvider
@@ -107,52 +139,124 @@ A colour set at the top level applies to both schemes; set it under `light` or `
 </ChatKitProvider>
 ```
 
-`useChatKitTokens()` reads the resolved set. To restyle every chat in an app once, call
-`setChatKitDefaultOverrides(...)` at start-up.
+`useChatKitTokens()` reads the final values. To restyle every chat in your app once, call `setChatKitDefaultOverrides(...)` when the app starts.
 
-## What is in the box
+## What is included
 
-Primitives (`/mui`):
+Small parts, from `@hiro/niru-chat-kit/mui`:
 
-- `Message`: user and assistant rows with avatar, content and actions.
-- `ChatContainer`: auto-following, scrollable transcript with a scroll button.
-- `Markdown`: GFM markdown with optional maths; no raw HTML.
-- `CodeBlock`: Shiki-highlighted code with a copy button.
-- `Loader`, `TextShimmer`, `ThinkingBar`: progress and waiting indicators.
-- `PromptInput`, `PromptSuggestion`, `FileUpload`: input surface, suggestion chips, file picking.
-- `Reasoning`, `Steps`, `ChainOfThought`: collapsible model thinking and step lists.
-- `Tool`, `ToolArgs`: tool calls with state and arguments.
-- `Source`: citation chips and cards.
-- `ResponseStream`: text revealed as it streams.
-- `SystemMessage`, `FeedbackBar`, `Image`: notices, thumbs feedback, safe images.
-- `JSXPreview`: renders agent-written markup under an allowlist (see below).
+- `Message`: a user or assistant row with avatar, content and actions.
+- `ChatContainer`: a scrollable message area that follows new text, with a scroll-to-bottom button.
+- `Markdown`: formatted text, with optional maths. Raw HTML is not allowed.
+- `CodeBlock`: coloured code with a copy button.
+- `Loader`, `TextShimmer`, `ThinkingBar`: waiting and progress indicators.
+- `PromptInput`, `PromptSuggestion`, `FileUpload`: the input area, suggestion buttons and file picking.
+- `Reasoning`, `Steps`, `ChainOfThought`: collapsible thinking and step lists.
+- `Tool`, `ToolArgs`: a tool call with its state and arguments.
+- `Source`: source chips and cards.
+- `ResponseStream`: text revealed as it streams in.
+- `SystemMessage`, `FeedbackBar`, `Image`: notices, thumbs up and down, and safe image display.
+- `JSXPreview`: draws markup an agent wrote, within an allowlist (see below).
 
-Blocks (`/mui`):
+Ready-made blocks, from the same entry point:
 
-- `Conversation`: the per-turn transcript. `FullChat`: transcript, composer and history in one.
-- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`: message box and suggestions.
-- `ChatEmptyState`, `ChatHistorySidebar`: the empty prompt and the thread list.
-- `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`: parts of a turn.
-- `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: human-in-the-loop and editing.
+- `Conversation` shows the messages. `FullChat` combines messages, message box and history in one.
+- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`: the message box and suggestions.
+- `ChatEmptyState`, `ChatHistorySidebar`: the screen before the first message, and the list of past chats.
+- `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`: the parts of one reply.
+- `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: asking the person to approve, answer or edit.
+
+## Voice input
+
+Give `Composer` the `voice` prop and it shows a microphone button that types what you say into the box. It uses the browser's own speech recognition (`SpeechRecognition` or `webkitSpeechRecognition`), which costs nothing. In a browser without it, such as Firefox, the button is hidden. Recognised phrases are added to the draft, and sending stops listening. If the microphone is blocked or nothing is heard, a short message appears. Set `voiceLang`, for example `en-PH`, to choose the language. The hook behind it is in the core:
+
+```tsx
+const { supported, listening, interim, error, start, stop } = useSpeechInput({
+  lang: "en-PH",
+  onFinal: (text) => setDraft((draft) => `${draft} ${text}`.trim()),
+});
+```
+
+## Call mode
+
+Call mode is a voice call screen, laid out like Gemini Live, that you can connect to your own voice service. The kit does not include a voice service. You write a `VoiceSession` (a snapshot of the call, a way to subscribe to changes, an audio level meter and a few methods) for LiveKit, WebRTC or the browser, and the kit draws the screens. `createFakeVoiceSession()` is a scriptable stand-in for tests and demos.
+
+- `CallStage` is the full-screen call. It has a dark background with a soft glow in the accent colour. A menu slot sits at the top left, a captions switch and the person's avatar at the top right. The agent's mark and one large status line are in the centre ("The mic is yours, Kio" while listening; you can change the text for each state with `labels`). A row of round buttons runs along the bottom: camera, share screen, a wide pill that moves with the voice, microphone and end. A button only appears when the session says it can do that. Space mutes, Escape minimises (when `onMinimise` is set), and End asks for no confirmation. To lay the screen out yourself, use `CallStage.Header`, `.Status`, `.Captions`, `.Preview` and `.Controls`.
+- `VoiceLevelPill` is the default moving visual. `CallOrb` (`visual="orb"`) is Niru's orb, with a plain CSS circle where the browser has no WebGL. Both stay still when the person has asked their device for reduced motion.
+- `CallStrip` is the minimised call. Pass it to `FullChat` as `aboveComposer` and it sits directly above the message box. Give `FullChat` (or `Composer`) `onStartCall` to show the round phone button next to Send; leave `onStartCall` out while a call is running. You can also set `callLabel` and `callDisabled`.
+- `CallCard` is the record of a finished call, with a Show transcript toggle.
+- `CallProblemScreen` covers a blocked microphone, a lost connection and an ended call. When the browser blocks sound, the status line becomes a "Tap to hear" button.
+- Camera and screen sharing: your session decides how to send them. `useLocalMedia()` from the core gives a preview on the person's own device through `getUserMedia` and `getDisplayMedia`, and nothing leaves the browser. It stops every track when the call is held, ends or fails, when the person turns the camera or sharing off, when the browser's own "stop sharing" button is used, and when the component goes away.
+- Call colours come from the dark-mode tokens. Override them with the `colors` prop (`useCallColors` reads them).
+
+```tsx
+const session = useMemo(() => createFakeVoiceSession({ capabilities: { camera: true, screenShare: true } }), []);
+<CallStage session={session} user={{ name: "Kio" }} agent={{ name: "Niru" }} onMinimise={minimise} />
+// later, in the chat:
+<CallStrip session={session} onExpand={expand} />
+<CallCard summary={summariseCall(session.getSnapshot())} agentName="Niru" />
+```
+
+## History sidebar
+
+`ChatHistorySidebar` has four options you switch on yourself.
+
+- `searchable` adds a search box that filters by title and preview, ignoring upper and lower case.
+- `grouped` splits the list into Today, Yesterday, Previous 7 days, Previous 30 days and Older, using each item's `at` time. Items without `at` go under Older.
+- `onRename(id, title)` and `onDelete(id)` add a menu on each row. Delete asks for confirmation first.
+- `labels` changes any of the text, and `now` fixes the clock for tests.
+
+The search and grouping are also in the core, as `filterConversations` and `groupConversationsByAge`.
+
+```tsx
+<ChatHistorySidebar items={rows} activeId={id} onSelect={open} onNew={create}
+  searchable grouped onRename={rename} onDelete={remove} />
+```
+
+## Deleting messages
+
+Give `ChatTurnActions` an `onDelete(message)` function and `TurnActions` shows a Delete button, behind a confirmation, on user and assistant messages. Without it, no Delete button is drawn.
+
+## Composer toggles and the More menu
+
+`toggles` adds on and off chips to the row under the message box. Each is `{ id, label, icon, active, onToggle, disabled? }` and is announced to screen readers as pressed or not. `moreActions` takes any content, usually menu items, and shows it behind a "More" button.
+
+```tsx
+<Composer value={draft} onChange={setDraft} onSubmit={send}
+  toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]}
+  moreActions={<MenuItem onClick={addPhoto}>Add a photo</MenuItem>} />
+```
+
+## Tool input and output
+
+`Tool` takes optional `input` and `output`. A string shows as text and anything else as formatted JSON, coloured from the tokens. They sit inside the expanded card, which starts collapsed. If you pass neither, nothing extra is drawn. `state` also accepts the prompt-kit names (`input-streaming`, `input-available`, `output-available`, `output-error`) as other ways to write the existing statuses.
+
+```tsx
+<Tool step={step} state="output-available" input={{ query: "pricing" }} output="3 results" />
+```
+
+## Images from raw data
+
+`Image` takes `src`, or raw data as `base64` or `uint8Array` together with a `mediaType` such as `image/png`. Raw data is shown through a temporary browser address that is released when the data changes and when the component goes away. A media type that does not start with `image/` is refused, and the fallback text shows instead.
+
+## For AI tools
+
+`llms.txt` is a short index of the kit. `llms-full.txt` lists every export of both entry points with a one-line purpose, the main props and an example. Both ship with the package.
 
 ## JSXPreview safety
 
-`JSXPreview` renders markup an agent wrote. It is off unless you pass `components`, the allowlist.
-It uses its own small reader (no `react-jsx-parser`):
+`JSXPreview` draws markup that an agent wrote. It draws nothing unless you pass `components`, the allowlist of components you permit. It reads the markup with its own small reader, not `react-jsx-parser`.
 
-- Only listed components and a fixed set of HTML tags render; any other tag shows as text.
-- Attributes are limited to a safe set. `on*` handlers and `dangerouslySetInnerHTML` never pass,
-  and neither do `javascript:` or `data:` URLs.
-- `{expressions}` are never evaluated.
+- Only the components you list and a fixed set of HTML tags are drawn. Any other tag shows as text.
+- Only a short list of safe attributes gets through. `on*` handlers and `dangerouslySetInnerHTML` are always dropped, and so are `javascript:` and `data:` links.
+- Anything in `{curly braces}` is never run.
 
-Do not enable it on a public surface.
+Do not turn it on for public pages.
 
-## Core and MUI split
+## Where core ends and MUI begins
 
-`src/core` imports no `@mui/*` and nothing from `src/mui`; `src/mui` imports core. A test
-(`src/boundaries.test.ts`) fails on a violation. See `CONTRIBUTING.md`.
+`src/core` imports nothing from `@mui/*` and nothing from `src/mui`. `src/mui` imports the core. A test (`src/boundaries.test.ts`) fails if that rule is broken. See `CONTRIBUTING.md`.
 
 ## Licence
 
-MIT, (c) 2026 HiroLabz. Component names, compound shapes and behaviour were informed by prompt-kit,
-MIT, (c) 2025 Julien Thibeaut; see `NOTICE`.
+MIT, (c) 2026 HiroLabz. Component names, shapes and behaviour were informed by prompt-kit, MIT, (c) 2025 Julien Thibeaut. See `NOTICE`.

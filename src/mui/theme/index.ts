@@ -2,3 +2,4 @@ export { ChatKitProvider, colorVariables, useChatKitStyles, useChatKitTokens } f
 export { createChatKitTokens } from "./create-tokens";
 export { getChatKitDefaultOverrides, mergeChatKitOverrides, setChatKitDefaultOverrides } from "./defaults";
 export { AA_CONTRAST, blend, getContrastRatio, readableOn } from "./color";
+export { ChatLookProvider, useChatLook, type ChatLook } from "./look";

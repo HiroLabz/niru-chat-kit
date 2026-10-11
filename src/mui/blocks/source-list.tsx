@@ -69,7 +69,7 @@ export function SourceList({ citations }: { citations?: Citation[] | null }) {
       {deduped.map((citation) =>
         citation.kind === "web" && citation.url ? (
           <Source key={dedupeKey(citation)} href={citation.url} sx={{ minWidth: 0, maxWidth: "100%" }}>
-            <Source.Trigger label={citation.label} slotProps={{ root: { sx: chipLike } }} />
+            <Source.Trigger label={citation.label} slotProps={{ root: { sx: chipLike, "data-chat": "source" } as never }} />
             <Source.Content title={citation.title ?? citation.label} />
           </Source>
         ) : (
@@ -79,6 +79,7 @@ export function SourceList({ citations }: { citations?: Citation[] | null }) {
             variant="outlined"
             label={citation.label}
             title={citation.label}
+            data-chat="source"
             sx={scheme((c) => ({ maxWidth: SOURCE_CHIP_MAX_WIDTH, color: c.text, borderColor: c.border }))}
           />
         )

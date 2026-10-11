@@ -14,6 +14,7 @@ import type { ChatMessage, ChatTurnActions, FeedbackRating } from "../../core/ty
 import { useChatKitStyles } from "../theme";
 import { FeedbackBar } from "../primitives/feedback-bar";
 import { TurnCopyButton } from "./turn-copy-button";
+import { TurnDeleteButton } from "./turn-delete-button";
 
 function SiblingSwitcher({
   siblingIds,
@@ -112,10 +113,17 @@ export function TurnActions({
         : serverId
           ? (actions.renderCopy?.(message) ?? null)
           : null;
+  const extraActions = isUser || !message.text ? null : (actions.renderExtraActions?.(message) ?? null);
+  const onDelete = actions.onDelete;
+  const deleteAction = onDelete ? (
+    <TurnDeleteButton message={message} onDelete={onDelete} disabled={actions.disabled} />
+  ) : null;
   if (!serverId) {
-    return copyAction ? (
-      <Stack direction="row" sx={scheme((c) => ({ alignItems: "center", mt: 0.25, color: c.mutedText }))}>
+    return copyAction || extraActions || deleteAction ? (
+      <Stack direction="row" data-chat="actions" sx={scheme((c) => ({ alignItems: "center", mt: 0.25, color: c.mutedText }))}>
         {copyAction}
+        {extraActions}
+        {deleteAction}
       </Stack>
     ) : null;
   }
@@ -126,11 +134,12 @@ export function TurnActions({
   const onRegenerate = actions.onRegenerate;
   const showEdit = isUser ? Boolean(actions.onEdit) && actions.canEdit !== false : Boolean(onRegenerate);
   const showBranches = siblingIds.length > 1 && Boolean(actions.onSwitchBranch);
-  if (!showEdit && !showBranches && !copyAction && !onFeedback) return null;
+  if (!showEdit && !showBranches && !copyAction && !onFeedback && !extraActions && !deleteAction) return null;
   return (
     <Stack
       direction="row"
       spacing={0.25}
+      data-chat="actions"
       sx={scheme((c) => ({ alignItems: "center", mt: 0.25, color: c.mutedText }))}
     >
       {showBranches ? (
@@ -154,6 +163,8 @@ export function TurnActions({
       {!isUser && onFeedback ? (
         <FeedbackRatingBar serverId={serverId} disabled={actions.disabled} onFeedback={onFeedback} />
       ) : null}
+      {extraActions}
+      {deleteAction}
     </Stack>
   );
 }

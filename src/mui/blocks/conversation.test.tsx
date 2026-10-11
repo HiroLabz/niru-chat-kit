@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ChatMessage } from "../../core/types";
 import type { WorkingStep } from "../../core/working-process";
-import { Conversation } from "./conversation";
+import { columnPadding, Conversation } from "./conversation";
 
 const searchStep: WorkingStep = {
   id: "t1",
@@ -114,6 +114,17 @@ describe("Conversation", () => {
     expect(screen.queryByText("extra for u1")).not.toBeInTheDocument();
   });
 
+  it("renders the app's user extras on the user's turn only", () => {
+    render(
+      <Conversation
+        messages={[user, { id: "a1", role: "assistant", text: "Answer" }]}
+        renderUserExtras={(message) => <p>files of {message.id}</p>}
+      />
+    );
+    expect(screen.getByText("files of u1")).toBeInTheDocument();
+    expect(screen.queryByText("files of a1")).not.toBeInTheDocument();
+  });
+
   it("draws nothing for a settled assistant turn that has nothing to show", () => {
     render(<Conversation messages={[user, { id: "a1", role: "assistant", text: "" }]} />);
     expect(screen.queryByText("H")).not.toBeInTheDocument();
@@ -160,5 +171,37 @@ describe("Conversation", () => {
     );
     expect(screen.getAllByText("still face")).toHaveLength(1);
     expect(screen.getAllByText("live face")).toHaveLength(1);
+  });
+
+  it("drops every face when the app passes null, including on the typing row", () => {
+    const { container } = render(
+      <Conversation
+        messages={[{ id: "a0", role: "assistant", text: "Earlier" }, user]}
+        agentInitial="Q"
+        agentAvatar={null}
+        liveAvatar={null}
+        typing
+      />
+    );
+    expect(container.querySelector(".MuiAvatar-root")).toBeNull();
+    expect(screen.queryByText("Q")).not.toBeInTheDocument();
+  });
+
+  it("still falls back to the initial when no avatar is given", () => {
+    render(<Conversation messages={[user]} agentInitial="Q" typing />);
+    expect(screen.getByText("Q")).toBeInTheDocument();
+  });
+
+  it("marks the timestamp so an app can show it on hover only", () => {
+    const { container } = render(
+      <Conversation messages={[{ id: "a0", role: "assistant", text: "Hello", at: 1000 }]} />
+    );
+    expect(container.querySelector("[data-chat-timestamp]")).not.toBeNull();
+  });
+
+  it("centres the turns in a column only when columnMaxWidth is given", () => {
+    expect(columnPadding(760)).toEqual({ paddingInline: "max(24px, calc((100% - 760px) / 2))" });
+    const { container } = render(<Conversation messages={[user]} columnMaxWidth={760} />);
+    expect(container.querySelector('[role="log"]')).not.toBeNull();
   });
 });

@@ -242,7 +242,7 @@ function PromptInputAction({
   className,
   slotProps,
 }: {
-  tooltip: string;
+  tooltip: ReactNode;
   children: ReactNode;
   sx?: BoxProps["sx"];
   className?: string;

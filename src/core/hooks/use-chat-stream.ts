@@ -277,7 +277,7 @@ export function useChatStream<TParams extends object = Record<string, unknown>>(
   );
   const retry = useCallback(() => {
     const replay = replayRef.current;
-    if (replay?.kind === "run") void run(replay.message, replay.overrides, replay.echo, replay.regenerateId);
+    if (replay?.kind === "run") void run(replay.message, replay.overrides, false, replay.regenerateId);
     else if (replay?.kind === "resume") void resume(replay.answer, replay.values, replay.interruptKind);
     else if (replay?.kind === "fork") void fork(replay.fork, replay.messageId, replay.content);
     else if (replay?.kind === "branch") void showSibling(replay.messageId);

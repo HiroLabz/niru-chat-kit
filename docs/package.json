@@ -1,0 +1,38 @@
+{
+  "name": "niru-chat-kit-docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "packageManager": "pnpm@10.34.5",
+  "scripts": {
+    "gen": "node scripts/extract-props.mjs && node scripts/copy-llms.mjs",
+    "dev": "pnpm run gen && vite",
+    "typecheck": "pnpm run gen && tsc --noEmit",
+    "build": "pnpm run gen && tsc --noEmit && vite build && node scripts/spa-fallback.mjs",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.1.1",
+    "@mui/material": "^9.1.2",
+    "katex": "^0.19.0",
+    "marked": "^18.0.14",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^9.1.0",
+    "react-router-dom": "^7.0.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "shiki": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5",
+    "vite": "^7.0.0"
+  }
+}

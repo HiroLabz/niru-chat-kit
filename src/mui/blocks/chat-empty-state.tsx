@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -18,6 +19,7 @@ export function ChatEmptyState({
   onSuggestion,
   agentInitial = "H",
   avatarSrc,
+  avatar,
   accentColor,
   disabled,
 }: {
@@ -26,6 +28,8 @@ export function ChatEmptyState({
   onSuggestion?: (prompt: string) => void;
   agentInitial?: string;
   avatarSrc?: string;
+  /** Replaces the initial or image avatar, for an app that draws its own face. */
+  avatar?: ReactNode;
   /** Recolours the suggestion chips for one surface (a widget's brand colour). Prefer the `accent` token. */
   accentColor?: string;
   disabled?: boolean;
@@ -44,7 +48,7 @@ export function ChatEmptyState({
         textAlign: "center",
       }}
     >
-      <Message.Avatar initial={agentInitial} size={EMPTY_STATE_AVATAR_SIZE} src={avatarSrc} />
+      {avatar ?? <Message.Avatar initial={agentInitial} size={EMPTY_STATE_AVATAR_SIZE} src={avatarSrc} />}
       <Typography variant="body2" sx={{ fontWeight: 600 }}>
         {greeting}
       </Typography>

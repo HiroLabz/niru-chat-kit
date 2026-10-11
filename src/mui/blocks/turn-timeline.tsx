@@ -29,7 +29,8 @@ import {
   type TurnPart,
 } from "../../core/stream/turn-parts";
 import { stepTitle, type WorkingStep } from "../../core/working-process";
-import { useChatKitStyles } from "../theme";
+import CheckIcon from "@mui/icons-material/CheckOutlined";
+import { useChatKitStyles, useChatLook } from "../theme";
 import { Markdown } from "../primitives/markdown";
 import { Reasoning, useReasoning } from "../primitives/reasoning";
 import { TextShimmer } from "../primitives/text-shimmer";
@@ -69,11 +70,13 @@ function sumThoughtAndToolMs(parts: TurnPart[]): number {
 function TimelineHeader({ label, running }: { label: string; running: boolean }) {
   const { scheme } = useChatKitStyles();
   const { open } = useReasoning();
+  const { stepsCard } = useChatLook();
   return (
     <Reasoning.Trigger
       sx={scheme((c) => ({ alignSelf: "flex-start", gap: 0.5, borderRadius: 1, color: c.mutedText }))}
-      slotProps={{ root: { "aria-expanded": open } }}
+      slotProps={{ root: { "aria-expanded": open, "data-chat": "steps" } as never }}
     >
+      {stepsCard ? <BuildIcon aria-hidden sx={{ fontSize: 18 }} /> : null}
       {running ? (
         <TextShimmer fontSize={FONT_SIZE + 1}>{label}</TextShimmer>
       ) : (
@@ -86,6 +89,12 @@ function TimelineHeader({ label, running }: { label: string; running: boolean })
           transform: open ? "none" : "rotate(-90deg)",
         }}
       />
+      {stepsCard ? (
+        <Box component="span" data-chat="steps-state" sx={{ ml: "auto", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+          {running ? "Working" : "Finished"}
+          {running ? null : <CheckIcon aria-hidden sx={{ fontSize: 16 }} />}
+        </Box>
+      ) : null}
     </Reasoning.Trigger>
   );
 }

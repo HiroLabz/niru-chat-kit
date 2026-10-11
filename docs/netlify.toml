@@ -1,0 +1,14 @@
+# Set the site's base directory to "docs" in Netlify (or keep this file there and use the paths below).
+[build]
+  base = "docs"
+  command = "pnpm install --frozen-lockfile && pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# The site uses a hash router, so every route is index.html already; this keeps a typed path working too.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

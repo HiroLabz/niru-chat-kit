@@ -31,6 +31,7 @@ import type { ChatKitColorTokens } from "../../core/tokens";
 import { useChatKitStyles } from "../theme";
 import { sxArray } from "./sx";
 import { ToolArgsList, toolArgEntries } from "./tool-args";
+import { ToolValue } from "./tool-io";
 
 type ToolCardStatus = "running" | "done" | "failed" | "paused";
 
@@ -39,6 +40,16 @@ const STATUS_FROM_STEP: Record<WorkingStep["status"], ToolCardStatus> = {
   success: "done",
   error: "failed",
   interrupted: "paused",
+};
+
+/** The four states prompt-kit's Tool uses, accepted as aliases of the kit's own statuses. */
+export type ToolState = "input-streaming" | "input-available" | "output-available" | "output-error";
+
+const STATUS_FROM_STATE: Record<ToolState, ToolCardStatus> = {
+  "input-streaming": "running",
+  "input-available": "running",
+  "output-available": "done",
+  "output-error": "failed",
 };
 
 const STATUS_LABEL: Record<ToolCardStatus, string> = {
@@ -148,8 +159,17 @@ export function Tool({
   sx,
   className,
   slotProps,
+  state,
+  input,
+  output,
 }: {
   step: WorkingStep;
+  /** A prompt-kit state; when given it sets the status chip in place of `step.status`. */
+  state?: ToolState;
+  /** The call's raw input: text shows as text, anything else as pretty JSON. Shown in the expanded card. Absent: nothing added. */
+  input?: unknown;
+  /** The call's raw output, shown the same way. Absent: nothing added. */
+  output?: unknown;
   defaultOpen?: boolean;
   /** Words a tool name when the step carries no title; defaults to the kit's own. */
   formatName?: (name: string) => string;
@@ -160,7 +180,7 @@ export function Tool({
   const { scheme } = useChatKitStyles();
   const [open, setOpen] = useState(defaultOpen);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const status = STATUS_FROM_STEP[step.status];
+  const status = state ? STATUS_FROM_STATE[state] : STATUS_FROM_STEP[step.status];
   const name = cardToolName(step.name, formatName);
   const title = stepTitle(step, formatName);
   const showTitle = plain(title) !== plain(name) && plain(title) !== plain(step.name);
@@ -170,7 +190,9 @@ export function Tool({
   const hasDetails = Boolean(
     toolArgEntries(details?.inputs).length > 0 || details?.inputsText || details?.output
   );
-  const expandable = showTitle || hasDetails;
+  const hasInput = input !== undefined && input !== null;
+  const hasOutput = output !== undefined && output !== null;
+  const expandable = showTitle || hasDetails || hasInput || hasOutput;
   const { sx: rootSx, ...rootRest } = slotProps?.root ?? {};
 
   const header = (
@@ -235,6 +257,8 @@ export function Tool({
             {showTitle ? (
               <Typography sx={scheme((c) => ({ fontSize: 13, color: c.mutedText }))}>{title}</Typography>
             ) : null}
+            {hasInput ? <ToolValue label="Input" value={input} /> : null}
+            {hasOutput ? <ToolValue label="Output" value={output} /> : null}
             {hasDetails ? (
               <>
                 <ButtonBase

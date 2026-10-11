@@ -119,3 +119,58 @@ describe("Tool summary and details", () => {
     expect(screen.getByText("Found 2 agents")).toBeInTheDocument();
   });
 });
+
+describe("Tool input and output", () => {
+  it("adds nothing and stays non-expandable when input and output are absent", () => {
+    render(<Tool step={step({ title: "search docs" })} defaultOpen />);
+    expect(screen.queryByTestId("tool-input")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tool-output")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("is collapsed by default and opens to show text and pretty JSON", () => {
+    render(<Tool step={step({ status: "success" })} input={{ query: "pricing", limit: 3, exact: true }} output="3 results" />);
+    expect(screen.queryByTestId("tool-input")).not.toBeInTheDocument();
+    const toggle = screen.getByRole("button", { expanded: false });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByTestId("tool-output")).toHaveTextContent("3 results");
+    const input = screen.getByTestId("tool-input");
+    expect(input.textContent).toBe('{\n  "query": "pricing",\n  "limit": 3,\n  "exact": true\n}');
+    expect(input.querySelector('[data-token="key"]')).toHaveTextContent('"query"');
+    expect(input.querySelector('[data-token="string"]')).toHaveTextContent('"pricing"');
+    expect(input.querySelector('[data-token="number"]')).toHaveTextContent("3");
+    expect(input.querySelector('[data-token="literal"]')).toHaveTextContent("true");
+  });
+
+  it("shows only the side that was given", () => {
+    render(<Tool step={step()} output={{ ok: true }} defaultOpen />);
+    expect(screen.queryByTestId("tool-input")).not.toBeInTheDocument();
+    expect(screen.getByTestId("tool-output")).toBeInTheDocument();
+  });
+
+  it("shows a falsy value such as 0 or an empty string", () => {
+    render(<Tool step={step()} input={0} output="" defaultOpen />);
+    expect(screen.getByTestId("tool-input")).toHaveTextContent("0");
+    expect(screen.getByTestId("tool-output")).toBeInTheDocument();
+  });
+
+  it("does not crash on a circular value", () => {
+    const loop: Record<string, unknown> = {};
+    loop.self = loop;
+    render(<Tool step={step()} input={loop} defaultOpen />);
+    expect(screen.getByTestId("tool-input")).toBeInTheDocument();
+  });
+});
+
+describe("Tool prompt-kit states", () => {
+  it.each([
+    ["input-streaming", "Running"],
+    ["input-available", "Running"],
+    ["output-available", "Done"],
+    ["output-error", "Failed"],
+  ] as const)("reads %s as the %s chip", (state, label) => {
+    render(<Tool step={step({ status: "interrupted" })} state={state} />);
+    expect(screen.getByText(label)).toBeInTheDocument();
+  });
+});

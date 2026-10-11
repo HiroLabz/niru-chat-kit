@@ -97,6 +97,21 @@ describe("useChatStream", () => {
     expect(send).toHaveBeenCalledTimes(2);
   });
 
+  it("retries a failed turn without adding the question a second time", async () => {
+    const send = vi
+      .fn<ChatTransport<Params>["send"]>()
+      .mockRejectedValueOnce(new ChatTransportError("Rate limited", "rate_limited", 429))
+      .mockImplementation(async () => frames([STARTED, RESULT, { event: "done", data: {} }]));
+    const { result } = renderHook(() => useChatStream(transportOf({ send })));
+    await act(async () => result.current.send("Hi"));
+    await act(async () => result.current.retry());
+    await waitFor(() => expect(result.current.status).toBe("done"));
+    const questions = result.current.messages.filter((m) => m.role === "user");
+    expect(questions.map((m) => m.text)).toEqual(["Hi"]);
+    await act(async () => result.current.send("Again"));
+    expect(result.current.messages.filter((m) => m.role === "user").map((m) => m.text)).toEqual(["Hi", "Again"]);
+  });
+
   it("settles a stream that ends without a terminal frame as an error", async () => {
     const transport = transportOf({ send: vi.fn(async () => frames([STARTED, { event: "token", data: { text: "par" } }])) });
     const { result } = renderHook(() => useChatStream(transport));

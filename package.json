@@ -10,7 +10,9 @@
     "README.md",
     "LICENSE",
     "NOTICE",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "llms.txt",
+    "llms-full.txt"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

@@ -1,0 +1,7 @@
+# Makes this folder its own pnpm project, not a member of the kit's workspace one level up.
+packages: []
+# esbuild (used by Vite) has an install script; pnpm 10 reads onlyBuiltDependencies, pnpm 11+ reads allowBuilds.
+onlyBuiltDependencies:
+  - esbuild
+allowBuilds:
+  esbuild: true

@@ -1,0 +1,219 @@
+# @hiro/niru-chat-kit: full reference
+
+Two entry points. `@hiro/niru-chat-kit` is the core: no UI library, no URL, no `@mui`. `@hiro/niru-chat-kit/mui` is the MUI skin and imports the core. Both are ESM with type declarations. Every prop below is optional unless it is listed without a `?`.
+
+Install: `pnpm add github:HiroLabz/niru-chat-kit#<tag-or-commit>`. Peer dependencies: react and react-dom 19, @mui/material 9, @mui/icons-material, @emotion/react, @emotion/styled, react-markdown, remark-gfm, marked. Optional, loaded on demand: shiki (code highlighting), remark-math, rehype-katex, katex (maths).
+
+Rules that hold everywhere: colours come from tokens (`--nck-*` CSS variables and `useChatKitStyles`); the heavy optional libraries are dynamic imports; compound parts throw when used outside their root; slot props (`slotProps.root`, ...) pass extra props to inner elements.
+
+## Minimal chat
+
+```tsx
+import { useChatStream, type ChatTransport } from "@hiro/niru-chat-kit";
+import { ChatKitProvider, FullChat } from "@hiro/niru-chat-kit/mui";
+
+declare const transport: ChatTransport;
+
+export function Chat() {
+  const stream = useChatStream(transport);
+  return (
+    <ChatKitProvider>
+      <FullChat stream={stream} agent={{ name: "Niru", initial: "N" }} />
+    </ChatKitProvider>
+  );
+}
+```
+
+# Core entry: `@hiro/niru-chat-kit`
+
+## Transport and types
+
+- `ChatTransport<TParams>`: the only door to a backend. `send(turn, signal)` resolves with an async iterable of stream frames; `stop(runId)`; optional `regenerate`, `resume(turn, signal)` and `branches`. Example: `const transport: ChatTransport = { send: async (turn, signal) => parseSseStream((await fetch("/chat", { method: "POST", body: JSON.stringify(turn), signal })).body!), stop: async () => true };`
+- `ChatTurn`: one turn handed to `send` (`message`, `conversationId`, `startNewConversation`, `regenerate?`, `params?`).
+- `ChatResumeTurn`: the answer to a paused run (`conversationId`, `threadId`, `interruptKind`, `answer`, `values?`).
+- `ChatBranches`: `load`, `switchTo` and optional `fork` and `canEdit`; the server owns the conversation tree.
+- `ChatForkResult`: what a fork returns (`conversationId`, `messages`, `message`).
+- `ForkKind`: `"regenerate" | "edit"`.
+- `ChatTransportError`: a failed transport call; `message` is shown beside Retry, with `code` and `status`.
+- `ChatMessage`: one turn (`id`, `role`, `text`, `pending?`, `citations?`, `steps?`, `parts?`, `serverId?`, `siblingIds?`, `files?` ...).
+- `ChatRole`: `"user" | "assistant" | "system"`.
+- `ChatTurnActions`: the per-turn controls a transcript offers: `disabled`, `onRegenerate`, `onEdit`, `canEdit`, `onSwitchBranch`, `onCopy`, `renderCopy`, `onFeedback`, `renderExtraActions`, `onDelete(message)`. A control shows only when its handler is given. Example: `const actions: ChatTurnActions = { disabled: false, onDelete: (m) => remove(m.serverId) };`
+- `FeedbackRating`: `"up" | "down"`.
+- `MessageStatus`: `"completed" | "stopped"`.
+- `Citation`, `CitationCheck`: a source a reply cites, and the grounding check on it.
+- `Interrupt`: a pause waiting on the end user (`kind`, `question`, `options?`).
+- `InvokeResponse`, `StreamResultData`, `MessageOut`: the terminal result of a run and a stored message row.
+- `AgentStreamEvent`: the union of stream frames: `status`, `token`, `tool`, `thinking`, `reasoning`, `suggestions`, `needs_input`, `result`, `error`, `done`.
+- `AgentStreamStatus`: `"idle" | "connecting" | "streaming" | "needs_input" | "done" | "error"`.
+- `StatusEventData`, `TokenEventData`, `ReasoningEventData`, `SuggestionsEventData`, `NeedsInputEventData`, `ErrorEventData`, `ToolFrameData`, `ThinkingFrameData`: the payload of each frame.
+- `RunIds`, `RunShaping`, `RunShapingFields`, `ShapingStatus`: ids of the running conversation, and the response-schema outcome of a run.
+- `ChatReplay`, `BranchReplay`: what a retry replays, and a branch's replay data.
+- `GeneratedFileRef`, `GeneratedFileFormat`: a file a turn made.
+- `TurnPart`, `SplitParts`, `WorkingStep`, `StepDetails`, `ToolKind`: a turn in stream order, its tool and thought rows, and an icon family.
+
+## Streaming hooks
+
+- `useChatStream(transport, { params, initialMessages, initialConversationId, initialThreadId, branching })`: a streamed chat. Returns `messages`, `status`, `error`, `interrupt`, `followUps`, `turnActions`, `send`, `stop`, `retry`, `resume` and more. Example: `const { messages, send, stop } = useChatStream(transport);`
+- `UseChatStreamOptions`: the options above.
+- `useConversationBranches`, `UseConversationBranchesOptions`, `annotateFromMessages`: regenerate, edit and version switching against `ChatBranches`.
+- `useFollowUps()`: the AI follow-ups for the newest settled reply.
+- `useRunIds()`: the conversation, thread and principal ids as state and refs.
+- `useStreamFailure()`: why the last turn failed (message, code, status).
+- `useStreamTranscript(initialMessages)`: the transcript and the edits a run makes to it.
+- `useStepFrames`: keeps a streamed message's steps in sync with `tool` and `thinking` frames.
+- `useSuggestionFill(setDraft)`: wires suggestion pills to the box (fills, never sends); returns `inputRef` and `fill`.
+- `newId()`: a fresh local message id.
+- `newestAssistantId(messages)`: the newest agent turn's id.
+
+## Stream parsing and reducers
+
+- `parseSseStream(body, signal?, idleTimeoutMs?)`: async generator of typed frames from an SSE body; throws `SseStallError` when the body goes quiet.
+- `SseStallError`, `SSE_IDLE_TIMEOUT_MS`, `SSE_STALL_MESSAGE`: the stall error, its 60 s limit and the copy shown.
+- `SseFrame`: one raw SSE frame.
+- `shapingFromResult`, `readRunShaping`: read the response-schema outcome from a result.
+- `applyToolFrame`, `applyThinkingFrame`, `settleRunningSteps`: fold frames into a step list and settle running steps.
+- `applyToolFrameToParts`, `applyThinkingFrameToParts`, `appendTokenPart`, `appendReasoningPart`, `settleRunningParts`: the same on a turn's parts, in stream order.
+- `splitTurnParts(parts, pending)`: answer text versus timeline.
+- `hasVisibleActivity`, `isInternalStep`, `isListedStep`, `INTERNAL_TOOL_NAMES`, `toolKindOf`, `summarizeTitles`, `formatTurnDuration`: which steps show, and how they are named and timed.
+- `answerSource(message)`: the markdown source of a settled reply.
+- `resultFields(data, streamedText)`: what a terminal `result` frame says about the settled bubble.
+- `stepTitle`, `humanizeToolName`, `formatStepDuration`: step labels and durations.
+
+## History
+
+- `toChatMessages(rows)`: a stored conversation as chat turns.
+- `annotateFromHistory(local, rows)`: attaches server ids and branch positions to a live transcript.
+- `filesFromRow`, `filesOfTurn`, `formatFileSize`: generated files as chip data.
+- `readCitationCheck(value)`: narrows the loose `citation_check` object.
+- `isStructuredEcho`: detects a reply that only echoes structured output.
+- `conversationAgeGroup(at, now?)`: `"today" | "yesterday" | "previous7" | "previous30" | "older"` by calendar day; no date is older. Example: `conversationAgeGroup(row.at, new Date())`.
+- `groupConversationsByAge(items, now?)`: the non-empty groups in age order, keeping item order. Example: `groupConversationsByAge(rows).map((g) => g.group)`.
+- `filterConversations(items, query)`: case-insensitive match on `title` and `preview`.
+- `CONVERSATION_AGE_GROUPS`, `DEFAULT_AGE_GROUP_LABELS`, `ConversationAgeGroup`, `ConversationGroup`, `ConversationTime`: the group order, default labels and types.
+
+## Voice input
+
+- `useSpeechInput({ lang?, onFinal?, onInterim? })`: the browser's own speech recognition (`SpeechRecognition` or `webkitSpeechRecognition`), feature-detected after mount so it is safe on the server. Returns `{ supported, listening, interim, error, start, stop }`; stops on unmount. Example: `const { supported, listening, start, stop } = useSpeechInput({ lang: "en-PH", onFinal: (t) => setDraft((d) => d + " " + t) });`
+- `UseSpeechInputOptions`, `UseSpeechInputResult`, `SpeechRecognitionLike`: its types.
+- `speechErrorMessage(code)`: a short sentence for `not-allowed`, `no-speech`, `audio-capture`, `network` and others; empty for no error.
+
+## Voice calls
+
+- `VoiceSession`: the contract a transport implements. `getSnapshot()`, `subscribe(listener)`, `levels`, `setMuted(muted)`, `setCaptions(on)`, `setCamera(on)` and `setScreenShare(on)` (promises that never reject), `hold()`, `resume()`, `startAudio()`, `end()`, `retry()`. An implementation must switch the camera and screen share off when the call is held, ended or failed.
+- `VoiceSnapshot`: `phase`, `step`, `muted`, `captions`, `transcript`, `capabilities`, `problem`, `cameraOn`, `screenOn`, `localVideo`, `localScreen`, `remoteVideo`, `deviceError`, `startedAt`, `endedAt`. Types: `VoicePhase` (`connecting`, `listening`, `thinking`, `speaking`, `held`, `ended`, `failed`), `VoiceJoinStep` (`joining`, `connecting`, `microphone`, `audio`, `ready`), `VoiceProblem` (`microphone-blocked`, `audio-blocked`, `connection-lost`), `VoiceCapabilities` (`mute`, `captions`, `camera`, `screenShare`, `hold`), `VoiceTranscriptSegment`, `VoiceDeviceError`, `VoiceLevels`, `VoiceLevelSnapshot`.
+- `useVoiceSession(session)`: the snapshot on `useSyncExternalStore`; also asks the session to switch the camera and screen share off whenever the call is held, ended or failed. Example: `const call = useVoiceSession(session); call.phase`.
+- `createFakeVoiceSession(options?)`: a scriptable session for tests and demos. Options `phase`, `step`, `capabilities`, `captions`, `muted`, `transcript`, `problem`, `media`, `now`, `joinMs`. `session.script` has `setPhase`, `setStep`, `setLevels`, `say`, `settle`, `setCapabilities`, `fail`, `clearProblem`, `setRemoteVideo`, `failDevices`, `simulateLevels`, `play(steps)` and `stop()`; `session.calls` records the methods called. Types `FakeVoiceSession`, `FakeVoiceSessionOptions`, `FakeVoiceScript`, `FakeScriptStep`; `wobbleLevel(ms, seed?)` is a plausible voice level. Example: `const s = createFakeVoiceSession({ capabilities: { camera: true } }); s.script.say("agent", "Hello")`.
+- `useLocalMedia(options?)`: the visitor's own camera and screen share as local preview streams (`getUserMedia`, `getDisplayMedia`, feature-detected). Returns `camera`, `screen`, `supported`, `error`, `startCamera`, `startScreen`, `stopCamera`, `stopScreen`, `stopAll`, `controller`; stops every track on unmount. `createLocalMedia({ mediaDevices? })` is the same without React. Types `LocalMedia`, `LocalMediaSnapshot`, `CreateLocalMediaOptions`, `UseLocalMediaResult`.
+- `followLevels({ levels, source, onLevel })`: reads one level in animation frames, eased, with no React render; returns the stop function. `createLevels()` makes a `VoiceLevels` a transport can feed with `set`. `SILENT_LEVELS`, `LevelSource`, `FollowLevelsOptions`.
+- `summariseCall(snapshot, now?)`: the `VoiceCallSummary` (`durationMs`, settled `transcript`, `startedAt`, `endedAt`) for a `CallCard`. `formatCallDuration(ms)`: `4:07`.
+
+## Tokens
+
+- `ChatKitTokens`, `ChatKitColorTokens`, `ChatKitSharedTokens`, `ChatKitTokenOverrides`: the colour roles (accent, text, surface, border, userBubble, codeSurface, info, success, warning, error ...) and shared values (radius, fonts, code themes).
+- `CHAT_KIT_COLOR_TOKEN_NAMES`, `CHAT_KIT_SHARED_TOKEN_NAMES`: the token names.
+- `applyChatKitOverrides(base, overrides)`: merges overrides; a scheme-specific value beats a top-level one.
+- `chatKitVariableName("userBubbleText")`: `--nck-user-bubble-text`.
+- `DEFAULT_CODE_THEME_LIGHT`, `DEFAULT_CODE_THEME_DARK`, `DEFAULT_MONO_FONT_FAMILY`: defaults.
+
+## Approvals
+
+- `APPROVAL_INTERRUPT_KIND`: `"tool_approval"`. `APPROVE_ANSWER`, `EDIT_ANSWER`, `DENY_ANSWER`: the three answers. `approvalAnswerLabel(answer)`: the words the transcript shows.
+- `ApprovalInterrupt`, `ApprovalField`, `ApprovalFieldType`: an approval request and its form fields.
+- `parseApprovalValues(fields, values)` and `ParsedApprovalValues`: validates the form values.
+- `fieldLabel`, `humanizeKey`: display text for a field and a wire key.
+- `REQUIRED_FIELD_ERROR`, `NUMBER_FIELD_ERROR`, `BOOLEAN_TRUE`, `BOOLEAN_FALSE`: form constants.
+
+## Markdown and maths
+
+- `hasMathDelimiter`, `normalizeMathDelimiters`, `joinMathBlocks`: prepare streamed text for maths.
+- `loadMathPlugins`, `useMathPlugins(enabled)`, `resetMathPluginsForTests`, `MathPlugins`: load remark-math, rehype-katex and the KaTeX stylesheet on demand.
+
+## Copy constants
+
+- `TURN_ACTION_COPY`, `FEEDBACK_COPY`, `EDIT_FORM_COPY`, `DELETE_CONFIRM_COPY`, `MESSAGE_NOTE_COPY`, `REASONING_TRIGGER_COPY`, `TURN_TIMELINE_COPY`, `GENERIC_THOUGHT_TITLE`: the user-facing strings of the turn controls.
+
+# MUI entry: `@hiro/niru-chat-kit/mui`
+
+## Theme
+
+- `ChatKitProvider`: supplies tokens and writes `--nck-*` CSS variables. Props: `tokens` (overrides; top-level colours apply to both schemes, `light` and `dark` set one). Example: `<ChatKitProvider tokens={{ accent: "#0e7c66", radius: 10 }}>{children}</ChatKitProvider>`
+- `useChatKitTokens()`: the resolved tokens. `useChatKitStyles()`: tokens plus `scheme((colors, all) => sx)` for per-scheme styles.
+- `createChatKitTokens(theme, overrides)`: tokens for an MUI theme.
+- `setChatKitDefaultOverrides`, `getChatKitDefaultOverrides`, `mergeChatKitOverrides`: app-wide default overrides.
+- `colorVariables`, `blend`, `readableOn`, `getContrastRatio`, `AA_CONTRAST`: colour helpers.
+- `ChatLook`, `ChatLookProvider`, `useChatLook`: optional looks (`stepsCard`), all off by default.
+
+## Whole chat
+
+- `FullChat`: a whole chat on one `useChatStream` result. Props: `stream`, `agent`, `greeting`, `starters`, `placeholder`, `history`, `attachments`, `onAttach`, `columnMaxWidth`, `emptyState`, `disabled`, `errorAction`, `look`, `onStartCall` (call button next to Send), `callLabel`, `callDisabled`, `aboveComposer` (a node directly above the composer or interrupt card, for example a `CallStrip`). Example: `<FullChat stream={stream} agent={{ name: "Niru", initial: "N" }} starters={["What can you do?"]} />`
+- `FullChatProps`, `FullChatStream`: its props and the slice of the hook it reads.
+- `Conversation`: the auto-following `role="log"` transcript. Props: `messages`, `typing`, `turnActions`, `onStop`, `agentAvatar`, `liveAvatar`, `emptyState`, `footer`, `columnMaxWidth`, `renderMessage`, `renderExtras`. Example: `<Conversation messages={messages} typing={status === "connecting"} turnActions={turnActions} />`
+- `ConversationProps`, `ConversationTurn`, `ConversationTurnProps`: one memoised turn (user bubble, or avatar with timeline, answer, files, notes and actions).
+- `columnPadding(maxWidth)`: side padding that centres content in a column.
+- `TypingDots`: the typing dots alone.
+- `ChatEmptyState`: avatar, greeting and tappable starter chips. Props: `greeting`, `suggestions`, `onSuggestion`, `agentInitial`, `avatar`.
+
+## History sidebar
+
+- `ChatHistorySidebar`: the conversation list with identity, New chat and rows. Props: `items`, `activeId`, `onSelect`, `onNew`, `identity`, `hasMore`, `loading`, `onLoadMore`, `collapseBelow`, plus optional `searchable` (search box filtering title and preview), `grouped` (Today, Yesterday, Previous 7 days, Previous 30 days, Older by the item's `at`), `onRename(id, title)` and `onDelete(id)` (a per-row menu; delete asks first), `labels` (override any text) and `now` (for tests). Example: `<ChatHistorySidebar items={rows} activeId={id} onSelect={open} onNew={create} searchable grouped onRename={rename} onDelete={remove} />`
+- `ChatHistorySidebarProps`, `ChatHistoryItem` (`id`, `title?`, `preview?`, `at?`), `ChatHistoryIdentity`, `ChatHistoryLabels`, `DEFAULT_HISTORY_LABELS`: types and default texts.
+
+## Composer
+
+- `Composer`: the prompt box. Required: `value`, `onChange`, `onSubmit`. Optional: `onStop`, `busy`, `disabled`, `placeholder`, `settings`, `attachments`, `onAttach`, `onRemoveAttachment`, `accept`, `suggestions`, `trailing`, `endActions`, `inputRef`, plus `voice` (mic toggle that dictates into the box where the browser supports it), `voiceLang`, `toggles` (on/off chips with `aria-pressed`) and `moreActions` (menu items behind a "More" button), `moreLabel`, `onStartCall` (round call button before Send), `callLabel` (default "Start a call"), `callDisabled`. Example: `<Composer value={draft} onChange={setDraft} onSubmit={send} voice toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]} />`
+- `ComposerProps`, `ComposerAttachment` (`id`, `name`, `kind?`, `previewUrl?`), `ComposerToggle` (`id`, `label`, `icon`, `active`, `onToggle`, `disabled?`): types.
+- `ComposerPills`, `SuggestionPills`, `FOLLOW_UPS_LABEL`: follow-up or starter pills above the box.
+- `ComposerSuggestionsList`, `useComposerSuggestions`, `ComposerSuggestionsController`, `filterSuggestions`: autocomplete candidates above the field.
+- `PromptInput`: compound input surface (`PromptInput.Textarea`, `.Actions`, `.Action`). Props: `value`, `onValueChange`, `onSubmit`, `isLoading`, `disabled`, `maxRows`. `PromptInputTextarea`, `PromptInputActions`, `PromptInputAction` and `usePromptInput()` are the parts and context; `PromptInputSlotProps`, `PromptInputTextareaSlotProps`, `PromptInputActionsSlotProps`, `PromptInputActionSlotProps` type their slots.
+- `PromptSuggestion`: one suggestion chip or row. Props: `children`, `onSelect`, `highlight`, `variant`. `PromptSuggestionSlotProps`.
+- `FileUpload`: drop and pick files (`FileUpload.Trigger`, `.Content`). Props: `onFilesAdded`, `accept`, `multiple`, `scope`. `FileUploadTrigger`, `FileUploadContent`, `FileUploadProps`, `FileUploadTriggerProps`, `FileUploadScope`, `FileUploadSlotProps`.
+- `DataAttributes`: extra `data-*` attributes accepted by `rootProps`.
+
+## A turn
+
+- `TurnActions`: the controls under a settled turn: copy, regenerate, edit, version arrows, rating and, when `actions.onDelete` is given, Delete behind a confirm. Props: `message`, `actions` (a `ChatTurnActions`), `onStartEdit`. Example: `<TurnActions message={m} actions={{ disabled: false, onDelete: remove }} onStartEdit={edit} />`
+- `TurnCopyButton`: copies a reply's markdown and says "Copied".
+- `TurnTimeline`: the activity timeline of a turn ("Worked for 7s"). `TurnSteps`, `summarizeTurnSteps`, `TurnStepsSummary`: a turn's steps inside `Reasoning`.
+- `MessageNotes`: notes on how an answer ended (stopped, not grounded).
+- `MessageEditForm`: a user turn opened for editing; Save sends a new branch. Props: `initialText`, `disabled`, `onSave`, `onCancel`.
+- `SourceList`: the Sources row under a reply, from `citations`.
+- `FileChip`, `FileChipList`, `FileDownloader`: generated files with an optional download.
+- `AgentAvatar`: an agent's avatar (uploaded image or preset). `AVATAR_PRESETS`, `presetById`, `AgentAvatarProps`, `AgentAvatarValue`, `AvatarPreset`, `AvatarAccessory`.
+
+## Interrupts
+
+- `InterruptPrompt`: the pause a run waits on: a question or an approval. Props: `interrupt`, `onAnswer`, `pending`.
+- `ApprovalCard`: waiting calls, the resume form and Approve, Edit, Deny. Props: `interrupt`, `onAnswer`, `pending`, `disabledAnswers`.
+- `ApprovalFormFields`: the controls for one resume form. `QuestionCard`: the free-text answer box. `InterruptEditForm`, `EditableAction`: edit a waiting call before approving.
+
+## Call mode
+
+- `CallStage`: the full-screen call in the Gemini Live layout. Props: `session`, `user` (`name`, `avatar`), `agent` (`name`, `avatar` as the mark), `menu` (top-left slot), `labels` (any key of `CallLabels`; `{name}` is the person, `{agent}` the agent), `visual` (`pill` default or `orb`), `colors`, `onMinimise` (Escape and a button), `onClose`, `onCallAgain`, `autoFocus`, `children` (your own layout). Space toggles mute, End needs no confirm. Parts: `CallStage.Header`, `.Status`, `.Captions`, `.Preview`, `.Controls`, exported flat as `CallStageHeader`, `CallStageStatus`, `CallStageCaptions`, `CallStagePreview`, `CallStageControls` with `CallStageProps`, `CallStageHeaderProps`, `CallStageStatusProps`, `CallStageCaptionsProps`, `CallStageControlsProps`. `statusKeyOf(snapshot)` names the label of a state. Example: `<CallStage session={session} user={{ name: "Kio" }} onMinimise={minimise} />`
+- `VoiceLevelPill`: the default visual, a wide dark pill whose bottom glow rises and ripples with a level. Props: `levels`, `source` (`you`, `agent`, `none`), `height`, `still`. `VoiceLevelPillProps`.
+- `CallOrb`: Niru's orb as the second visual (WebGL shader, CSS circle fallback). Props: `state` (`OrbState`), `levels`, `size`, `label`, `still`. `CallOrbProps`, `orbStateOf(snapshot)`, `OrbState`, `orbColorsOf(colors)`, `DEFAULT_ORB_SIZE`.
+- `CallControlButton`: one round dark control. Props: `label`, `icon`, `onClick`, `active`, `danger`, `disabled`, `size`. `CallControlButtonProps`.
+- `CallStrip`: the minimised call. Props: `session`, `agentName`, `userName`, `labels`, `colors`, `onExpand`. `CallStripProps`.
+- `CallCard`: the finished call in the conversation with a transcript toggle. Props: `summary`, `agentName`, `userName`, `labels`, `defaultOpen`, `onCallAgain`. `CallCardProps`.
+- `CallProblemScreen`: microphone blocked, connection lost, ended. Props: `kind`. `CallProblemKind`, `CallProblemScreenProps`, `problemScreenOf(snapshot)`.
+- `useCallColors(overrides?)`, `CallColors`, `CallColorOverrides`: the call colours, derived from the dark-scheme tokens. `DEFAULT_CALL_LABELS`, `CallLabels`, `CallLabelKey`: every word. `CallPerson`, `CallVisual`: types. `useReducedMotion()`: `prefers-reduced-motion`, kept current.
+
+## Primitives
+
+- `Message`: a chat row (`Message.Avatar`, `.Content`, `.Actions`, `.Action`). Props: `from`. `MessageAvatar`, `MessageContent`, `MessageActions`, `MessageAction`, `MessageFrom`, `MESSAGE_AVATAR_SIZE`, `MESSAGE_ROW_GAP`, `MESSAGE_CONTENT_OFFSET`.
+- `ChatContainer`: auto-following scrollable log (`ChatContainer.Root`, `.Content`, `.ScrollAnchor`). `ChatContainerRoot`, `ChatContainerContent`, `ChatContainerScrollAnchor`, `ChatContainerRootProps`, `useChatContainer()`.
+- `ScrollButton`: jump to the latest. Props: `visible`, `onClick`. `ScrollButtonSlotProps`.
+- `Markdown` (alias `ChatMarkdown`): GFM markdown with optional maths, no raw HTML. `MarkdownBlock` is one memoised block; `markdownStyles(colors, tokens)` are its styles.
+- `CodeBlock`: Shiki-highlighted code with a copy button. Props: `code`, `language`. Parts: `CodeBlockCode`, `CodeBlockGroup`, `CodeBlockCopyButton`. `CodeBlockProps`, `CodeThemes`. `highlightCode(code, language, themes)` highlights with a dynamic shiki import.
+- `Loader`, `TextShimmer`, `ThinkingBar`: waiting indicators. `Loader` props `variant`, `size`, `text`; `LoaderVariant`, `LoaderSize`; `TextShimmerProps`; `ThinkingBar` props `text`, `onStop`; `ThinkingBarSlotProps`.
+- `Reasoning`: collapsible model thinking (`Reasoning.Trigger`, `.Content`). Props: `isStreaming`, `open`, `onOpenChange`. `ReasoningTrigger`, `ReasoningContent`, `ReasoningTriggerSlotProps`, `ReasoningContentSlotProps`, `useReasoning()`.
+- `Steps`: a step list (`Steps.Trigger`, `.Content`, `.Item`, `.Bar`). `StepsTrigger`, `StepsContent`, `StepsItem`, `StepsBar`, `StepsSlotProps`, `StepsTriggerSlotProps`, `StepsContentSlotProps`, `StepsItemSlotProps`, `useSteps()`.
+- `ChainOfThought`: step-by-step reasoning (`.Step`, `.Trigger`, `.Content`, `.Item`). `ChainOfThoughtStep`, `ChainOfThoughtTrigger`, `ChainOfThoughtContent`, `ChainOfThoughtItem`, with the slot types `ChainOfThoughtSlotProps`, `ChainOfThoughtStepSlotProps`, `ChainOfThoughtTriggerSlotProps`, `ChainOfThoughtContentSlotProps` and `ChainOfThoughtItemSlotProps`, and `useChainOfThought()`, `useChainOfThoughtStep()`.
+- `Tool` (alias `ToolCard`): one tool call as an expandable card. Props: `step` (a `WorkingStep`), `defaultOpen`, `formatName`, `slotProps`, plus optional `state` (the prompt-kit states `input-streaming`, `input-available`, `output-available`, `output-error`, read as running, running, done, failed), `input` and `output` (any value: a string shows as text, anything else as pretty JSON coloured from the tokens; shown in the expanded card, collapsed by default; nothing renders when both are absent). Example: `<Tool step={step} state="output-available" input={{ query: "pricing" }} output="3 results" />`
+- `ToolState`, `ToolSlotProps`, `cardToolName(name)`: types and the prefix-free tool name.
+- `ToolArgsList`, `toolArgEntries`, `ToolActionArgs`, `ToolArgEntry`: a call's arguments as `key: value` rows.
+- `Source`: a citation chip and card (`Source.Trigger`, `.Content`). Props: `href`. `SourceTrigger`, `SourceContent`, `SourceSlotProps`, `SourceTriggerSlotProps`, `SourceContentSlotProps`, `useSource()`, `faviconHost(href)`.
+- `ResponseStream`: text revealed as it streams. Props: `text`, `mode` (`plain` or `fade`).
+- `SystemMessage`: a notice. Props: `severity`, `children`, `action`. `SystemMessageSlotProps`.
+- `FeedbackBar`: thumbs up and down. Props: `value`, `onRate`, `disabled`. `FeedbackBarSlotProps`.
+- `Image` (alias `ChatImage`): a safe image with skeleton and error fallback. Props: `src`, or `base64` / `uint8Array` with `mediaType` (object URLs are revoked on change and unmount; a `mediaType` that is not `image/*` is refused), `alt`. `ImageProps`. Example: `<Image uint8Array={bytes} mediaType="image/png" alt="chart" />`
+- `JSXPreview`: renders agent-written markup under an allowlist; off unless `components` is passed. Props: `jsx`, `components`, `isStreaming`. `JSXPreviewProps`, `parseJsx`, `parseStyle`, `SAFE_HTML_TAGS`. Do not enable it on a public surface.

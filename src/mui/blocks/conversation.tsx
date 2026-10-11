@@ -13,6 +13,11 @@ import { ConversationTurn, TypingDots } from "./conversation-turn";
 import type { DataAttributes } from "./data-attributes";
 import type { FileDownloader } from "./file-chip";
 
+/** Side padding that centres content in a column of `maxWidth` px, with a 24 px minimum gutter. */
+export function columnPadding(maxWidth: number) {
+  return { paddingInline: `max(24px, calc((100% - ${maxWidth}px) / 2))` };
+}
+
 export type ConversationProps = {
   messages: ChatMessage[];
   /** Draws a turn yourself; return a falsy value to fall back to the kit's turn. */
@@ -38,9 +43,17 @@ export type ConversationProps = {
   /** Cancels the in-flight run; given, the typing row and a textless pending turn show a Stop button. */
   onStop?: () => void;
   renderExtras?: (message: ChatMessage) => ReactNode;
+  /** Blocks on the user's own turns, above the bubble; see `ConversationTurn`. */
+  renderUserExtras?: (message: ChatMessage) => ReactNode;
   /** Drawn inside the transcript after the last turn and the typing row (an open card, a notice), so it scrolls and follows with the conversation. */
   footer?: ReactNode;
   onDownloadFile?: FileDownloader;
+  /**
+   * Centres the turns in a column at most this many px wide (never closer than 24 px to the
+   * edge) while the transcript itself, and its scrollbar, still span the full width. Omitted
+   * keeps the turns edge to edge.
+   */
+  columnMaxWidth?: number;
   /** Extra attributes for the transcript element, for example an analytics mask. */
   rootProps?: Omit<HTMLAttributes<HTMLDivElement>, "className" | "children" | "role"> & DataAttributes;
 };
@@ -61,8 +74,10 @@ export function Conversation({
   turnActions,
   onStop,
   renderExtras,
+  renderUserExtras,
   footer,
   onDownloadFile,
+  columnMaxWidth,
   rootProps,
 }: ConversationProps) {
   const { scheme } = useChatKitStyles();
@@ -98,7 +113,11 @@ export function Conversation({
   }
 
   return (
-    <ChatContainer.Root rearmKey={rearmKey} sx={{ gap: 1.5, p: 2 }} {...rootProps}>
+    <ChatContainer.Root
+      rearmKey={rearmKey}
+      sx={[{ gap: 1.5, p: 2 }, ...(columnMaxWidth ? [columnPadding(columnMaxWidth)] : [])]}
+      {...rootProps}
+    >
       {messages.map((message) => {
         const custom = renderMessage?.(message);
         if (custom) {
@@ -116,6 +135,7 @@ export function Conversation({
               actions={turnActions}
               onStop={message.id === pendingId ? onStop : undefined}
               renderExtras={renderExtras}
+              renderUserExtras={renderUserExtras}
               onDownloadFile={onDownloadFile}
               avatar={liveAvatar && message.id === liveId ? liveAvatar : agentAvatar}
             />
@@ -124,7 +144,8 @@ export function Conversation({
       })}
       {typing ? (
         <Message data-role="assistant">
-          {liveAvatar ?? <Message.Avatar initial={agentInitial ?? "H"} />}
+          {/* `null` is a deliberate "no face": only an absent avatar falls back to the initial. */}
+          {liveAvatar === undefined ? <Message.Avatar initial={agentInitial ?? "H"} /> : liveAvatar}
           <Message.Content from="assistant" data-chat-bubble={undefined}>
             {onStop ? <ThinkingBar onStop={onStop} /> : <TypingDots />}
           </Message.Content>

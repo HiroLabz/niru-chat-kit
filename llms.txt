@@ -1,0 +1,29 @@
+# @hiro/niru-chat-kit
+
+> A streaming chat kit for React, modelled on prompt-kit. A core with no UI library (`@hiro/niru-chat-kit`) and an MUI skin (`@hiro/niru-chat-kit/mui`). Install from GitHub: `pnpm add github:HiroLabz/niru-chat-kit#<tag-or-commit>`. Peer dependencies: react 19, @mui/material 9, @mui/icons-material, @emotion/react, @emotion/styled, react-markdown, remark-gfm, marked. Optional and loaded on demand: shiki, remark-math, rehype-katex, katex.
+
+You implement one `ChatTransport` (the only thing that knows your backend), pass it to `useChatStream`, and render the result with `FullChat` or with `Conversation` plus `Composer`. Wrap the chat in `ChatKitProvider`; colours come from tokens, never from hard-coded values.
+
+- [README](README.md): install, peer dependencies, quick start, tokens, what is in the box, voice input, call mode, history sidebar, message delete, composer toggles, tool input and output, images from bytes.
+- [llms-full.txt](llms-full.txt): every export of both entry points with a one-line purpose, key props and a minimal example.
+- [CHANGELOG](CHANGELOG.md): what changed, newest first.
+- [CONTRIBUTING](CONTRIBUTING.md): setup, test, build and the rules (two layers, files at most 400 lines, colours from tokens, heavy libraries stay dynamic imports).
+
+## Core entry (`@hiro/niru-chat-kit`, no UI library)
+
+- Transport and types: `ChatTransport`, `ChatTurn`, `ChatMessage`, `ChatTurnActions`, frame types, `ChatTransportError`.
+- Streaming: `useChatStream` and its parts, `parseSseStream`, the frame reducers (`applyToolFrame`, `applyThinkingFrame`, turn parts).
+- History: `toChatMessages`, `annotateFromHistory`, `conversationAgeGroup`, `groupConversationsByAge`, `filterConversations`.
+- Voice: `useSpeechInput`, `speechErrorMessage`.
+- Voice calls: the `VoiceSession` contract (`VoiceSnapshot`, `VoicePhase`, `VoiceJoinStep`, `VoiceProblem`, `VoiceCapabilities`, `VoiceLevels`, `VoiceTranscriptSegment`), `useVoiceSession`, `createFakeVoiceSession`, `useLocalMedia`, `createLocalMedia`, `followLevels`, `createLevels`, `summariseCall`, `formatCallDuration`.
+- Tokens: `ChatKitTokens`, `applyChatKitOverrides`.
+- Approvals and maths helpers.
+
+## MUI entry (`@hiro/niru-chat-kit/mui`)
+
+- Whole chat: `FullChat`, `Conversation`, `ConversationTurn`, `ChatHistorySidebar`, `ChatEmptyState`.
+- Input: `Composer` (attachments, settings, `voice`, `toggles`, `moreActions`), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
+- Turn parts: `TurnActions`, `TurnTimeline`, `TurnSteps`, `Tool`, `Reasoning`, `Steps`, `ChainOfThought`, `Source`, `SourceList`, `FeedbackBar`, `Image`, `Markdown`, `CodeBlock`, `JSXPreview`.
+- Human in the loop: `InterruptPrompt`, `ApprovalCard`, `QuestionCard`, `MessageEditForm`.
+- Call mode: `CallStage` (`.Header`, `.Status`, `.Captions`, `.Preview`, `.Controls`), `VoiceLevelPill`, `CallOrb`, `CallControlButton`, `CallStrip`, `CallCard`, `CallProblemScreen`, `useCallColors`, `DEFAULT_CALL_LABELS`.
+- Theme: `ChatKitProvider`, `useChatKitStyles`, `useChatKitTokens`, `createChatKitTokens`.

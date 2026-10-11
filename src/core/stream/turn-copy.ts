@@ -14,6 +14,14 @@ export const TURN_ACTION_COPY = {
   copyFailed: "Could not copy",
 } as const;
 
+export const DELETE_CONFIRM_COPY = {
+  action: "Delete message",
+  title: "Delete this message?",
+  body: "It will be removed from the conversation. This cannot be undone.",
+  confirm: "Delete",
+  cancel: "Cancel",
+} as const;
+
 export const EDIT_FORM_COPY = {
   label: "Edit message",
   save: "Save",
