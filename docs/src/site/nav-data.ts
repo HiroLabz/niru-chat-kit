@@ -38,6 +38,7 @@ export const BLOCKS = [
   ["turn-actions", "TurnActions"],
   ["source-list", "SourceList"],
   ["file-chip", "FileChip"],
+  ["message-media", "MessageMedia"],
   ["interrupts", "Interrupts"],
   ["call-mode", "Call mode"],
 ] as const;

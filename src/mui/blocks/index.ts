@@ -15,6 +15,7 @@ export * from "./full-chat";
 export * from "./interrupt-edit-form";
 export * from "./interrupt-prompt";
 export * from "./message-edit-form";
+export * from "./message-media";
 export * from "./message-notes";
 export * from "./question-card";
 export * from "./source-list";

@@ -5,6 +5,7 @@ import type {
   VoiceCapabilities,
   VoiceJoinStep,
   VoiceLevelSnapshot,
+  VoiceMicrophone,
   VoicePhase,
   VoiceProblem,
   VoiceSession,
@@ -26,6 +27,13 @@ export interface FakeVoiceSessionOptions {
   capabilities?: Partial<VoiceCapabilities>;
   captions?: boolean;
   muted?: boolean;
+  /**
+   * Microphones to list. Given (even empty), the session reports them and implements
+   * `selectMicrophone`; left out, it has no picker at all.
+   */
+  microphones?: readonly VoiceMicrophone[];
+  /** The microphone in use at the start; default null (the browser's default). */
+  microphoneId?: string | null;
   transcript?: readonly VoiceTranscriptSegment[];
   problem?: VoiceProblem;
   /**
@@ -49,6 +57,8 @@ export interface FakeVoiceScript {
   /** Replace the text of a line and mark it final. */
   settle(id: string, text?: string): void;
   setCapabilities(capabilities: Partial<VoiceCapabilities>): void;
+  /** Replace the list of microphones, as a transport does when a device is plugged in or out. */
+  setMicrophones(microphones: readonly VoiceMicrophone[]): void;
   /** Raise a problem: microphone and connection problems fail the call, an audio problem leaves it running. */
   fail(problem: VoiceProblem): void;
   clearProblem(): void;
@@ -91,6 +101,7 @@ export function createFakeVoiceSession(options: FakeVoiceSessionOptions = {}): F
     phase: startPhase,
     step: startPhase === "connecting" ? options.step ?? "joining" : null,
     muted: options.muted ?? false,
+    ...(options.microphones ? { microphones: options.microphones, microphoneId: options.microphoneId ?? null } : {}),
     captions: options.captions ?? true,
     transcript: options.transcript ?? [],
     capabilities: { ...DEFAULT_CAPABILITIES, ...options.capabilities },
@@ -201,6 +212,7 @@ export function createFakeVoiceSession(options: FakeVoiceSessionOptions = {}): F
     settle(id, text) {
       set({ transcript: snapshot.transcript.map((item) => (item.id === id ? { ...item, text: text ?? item.text, final: true } : item)) });
     },
+    setMicrophones: (microphones) => set({ microphones }),
     setCapabilities: (capabilities) => set({ capabilities: { ...snapshot.capabilities, ...capabilities } }),
     fail(problem) {
       if (problem === "audio-blocked") {
@@ -270,6 +282,14 @@ export function createFakeVoiceSession(options: FakeVoiceSessionOptions = {}): F
       record("setMuted", muted);
       if (snapshot.capabilities.mute && !IDLE_PHASES.includes(snapshot.phase)) set({ muted });
     },
+    ...(options.microphones
+      ? {
+          selectMicrophone(deviceId: string) {
+            record("selectMicrophone", deviceId);
+            if (snapshot.microphones?.some((mic) => mic.deviceId === deviceId)) set({ microphoneId: deviceId });
+          },
+        }
+      : {}),
     setCaptions(on) {
       record("setCaptions", on);
       if (snapshot.capabilities.captions) set({ captions: on });

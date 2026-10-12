@@ -55,12 +55,25 @@ export interface VoiceCapabilities {
 /** Why a camera or screen share did not start. */
 export type VoiceDeviceError = "denied" | "unavailable";
 
+/** One microphone the person can choose. `label` is what the browser calls it ("MacBook Pro Microphone"). */
+export interface VoiceMicrophone {
+  deviceId: string;
+  label: string;
+}
+
 /** Everything a screen needs to draw the call, in one immutable object that changes identity on every change. */
 export interface VoiceSnapshot {
   phase: VoicePhase;
   /** The join step while connecting, else null. */
   step: VoiceJoinStep | null;
   muted: boolean;
+  /**
+   * The microphones to choose from, when the transport can list them. Optional: a session that
+   * leaves it out simply has no picker. An empty list means none was found.
+   */
+  microphones?: readonly VoiceMicrophone[];
+  /** The `deviceId` in use; null when the browser's default is in use. */
+  microphoneId?: string | null;
   captions: boolean;
   transcript: readonly VoiceTranscriptSegment[];
   capabilities: VoiceCapabilities;
@@ -91,6 +104,11 @@ export interface VoiceSession {
   /** Stable for the life of the session. */
   readonly levels: VoiceLevels;
   setMuted(muted: boolean): void;
+  /**
+   * Switch to another microphone. Optional: the call screens show the picker only when this is
+   * present (or when the screen is given its own `onSelectMicrophone`).
+   */
+  selectMicrophone?(deviceId: string): void;
   setCaptions(on: boolean): void;
   /** Turn the camera on or off; resolves when done, also when it failed (see `deviceError`). */
   setCamera(on: boolean): Promise<void>;

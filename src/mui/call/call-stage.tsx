@@ -11,12 +11,13 @@ import { CallContext, useCall, type CallContextValue, type CallPerson, type Call
 import { CallStageControls } from "./call-controls";
 import { CallStageCaptions } from "./call-captions";
 import { CallStageHeader } from "./call-header";
+import { useMicrophonePicker, type MicrophoneProps } from "./call-microphone";
 import { makeTranslate, type CallLabels } from "./call-labels";
 import { CallProblemScreen, problemScreenOf } from "./call-problems";
 import { CallStagePreview } from "./call-preview";
 import { CallStageStatus } from "./call-status";
 
-export interface CallStageProps {
+export interface CallStageProps extends MicrophoneProps {
   /** The call. Any transport can implement it; `createFakeVoiceSession()` stands in for tests and demos. */
   session: VoiceSession;
   /** The person on the call: `name` fills "The mic is yours, {name}"; `avatar` is the top-right slot. */
@@ -88,7 +89,7 @@ function DefaultLayout() {
  * Escape minimises, End needs no confirmation. Compose your own with the parts, for example
  * `<CallStage session={s}><CallStage.Status /><CallStage.Controls /></CallStage>`.
  */
-function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, overlay = false, autoFocus = true, children, className, sx }: CallStageProps) {
+function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, microphones, microphoneId, onSelectMicrophone, overlay = false, autoFocus = true, children, className, sx }: CallStageProps) {
   const snapshot = useVoiceSession(session);
   const colors = useCallColors(overrides);
   const root = useRef<HTMLDivElement>(null);
@@ -96,9 +97,10 @@ function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = 
   useEffect(() => {
     if (autoFocus) root.current?.focus({ preventScroll: true });
   }, [autoFocus]);
+  const microphone = useMicrophonePicker(session, snapshot, { microphones, microphoneId, onSelectMicrophone });
   const value = useMemo<CallContextValue>(
-    () => ({ session, snapshot, colors, t, visual, agent, user, menu, onMinimise, onClose, onCallAgain }),
-    [session, snapshot, colors, t, visual, agent, user, menu, onMinimise, onClose, onCallAgain]
+    () => ({ session, snapshot, colors, t, visual, agent, user, microphone, menu, onMinimise, onClose, onCallAgain }),
+    [session, snapshot, colors, t, visual, agent, user, microphone, menu, onMinimise, onClose, onCallAgain]
   );
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape" && onMinimise) {

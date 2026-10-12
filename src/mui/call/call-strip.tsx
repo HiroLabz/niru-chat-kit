@@ -17,11 +17,12 @@ import type { VoiceSession } from "../../core/voice/voice-types";
 import { CallColorsContext, useCallColors, type CallColorOverrides } from "./call-colors";
 import { CallControlButton } from "./call-control-button";
 import { pillSource } from "./call-controls";
+import { MicrophoneMenuButton, useMicrophonePicker, type MicrophoneProps } from "./call-microphone";
 import { makeTranslate, type CallLabels } from "./call-labels";
 import { statusKeyOf } from "./call-status";
 import { VoiceLevelPill } from "./voice-level-pill";
 
-export interface CallStripProps {
+export interface CallStripProps extends MicrophoneProps {
   session: VoiceSession;
   /** The agent's name, for the labels. */
   agentName?: string;
@@ -49,13 +50,15 @@ function useElapsed(startedAt: number | null, endedAt: number | null): number {
 /**
  * The minimised call, for the chat while a call runs: what the call is doing (the one polite live
  * region), how long it has run, an indicator while the camera or the screen is on, the mute
- * button when the session supports it, and End. The body returns to the full screen with `onExpand`.
+ * button when the session supports it, the "Choose microphone" caret when a microphone can be selected, and End.
+ * The body (labelled "Open call", see `labels.openCall`) returns to the full screen with `onExpand`.
  */
-export function CallStrip({ session, agentName, userName, labels, colors: overrides, onExpand, sx }: CallStripProps) {
+export function CallStrip({ session, agentName, userName, labels, colors: overrides, onExpand, microphones, microphoneId, onSelectMicrophone, sx }: CallStripProps) {
   const snapshot = useVoiceSession(session);
   const colors = useCallColors(overrides);
   const t = useMemo(() => makeTranslate(labels, { name: userName, agent: agentName }), [labels, userName, agentName]);
   const elapsed = useElapsed(snapshot.startedAt, snapshot.endedAt);
+  const microphone = useMicrophonePicker(session, snapshot, { microphones, microphoneId, onSelectMicrophone });
   const { capabilities, muted, cameraOn, screenOn, phase } = snapshot;
   const live = phase !== "ended" && phase !== "failed";
   return (
@@ -103,6 +106,7 @@ export function CallStrip({ session, agentName, userName, labels, colors: overri
             onClick={() => session.setMuted(!muted)}
           />
         ) : null}
+        {microphone && live ? <MicrophoneMenuButton picker={microphone} colors={colors} t={t} sx={{ ml: -0.5 }} /> : null}
         {live ? <CallControlButton size={40} danger label={t("end")} icon={<CallEndIcon />} onClick={() => session.end()} /> : null}
       </Box>
     </CallColorsContext.Provider>

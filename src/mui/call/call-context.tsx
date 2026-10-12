@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import type { VoiceSession, VoiceSnapshot } from "../../core/voice/voice-types";
 import type { CallColors } from "./call-colors";
 import type { CallTranslate } from "./call-labels";
+import type { MicrophonePicker } from "./call-microphone";
 
 /** Which visual moves with the voice: the pill in the control row (default) or Niru's orb in the centre. */
 export type CallVisual = "pill" | "orb";
@@ -22,6 +23,8 @@ export interface CallContextValue {
   visual: CallVisual;
   agent: CallPerson;
   user: CallPerson;
+  /** Null when nothing can select a microphone: no picker is drawn. */
+  microphone: MicrophonePicker | null;
   menu?: ReactNode;
   onMinimise?: () => void;
   onClose?: () => void;

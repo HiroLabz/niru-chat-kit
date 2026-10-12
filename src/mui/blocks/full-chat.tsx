@@ -16,7 +16,7 @@ import type { DataAttributes } from "./data-attributes";
 import { Composer, type ComposerAttachment } from "./composer";
 import type { ComposerToggle } from "./composer-toggles";
 import { ComposerPills } from "./composer-pills";
-import { columnPadding, Conversation } from "./conversation";
+import { columnPadding, Conversation, type ConversationProps } from "./conversation";
 import type { QuestionCardLabels } from "./question-card";
 import type { FileDownloader } from "./file-chip";
 import { InterruptPrompt } from "./interrupt-prompt";
@@ -70,6 +70,10 @@ export type FullChatProps = {
   /** Draws the agent's face on its turns, the typing row and the empty state, instead of an initial. `size` is the pixel size the kit would use. */
   renderAvatar?: (size: number) => ReactNode;
   onDownloadFile?: FileDownloader;
+  /** Images, videos and sounds under an assistant reply; see `Conversation`. Omitted: nothing is drawn. */
+  renderMedia?: ConversationProps["renderMedia"];
+  /** `onOpen`, `onDownload`, `onRetry`, `labels`, `maxColumns` and `maxHeight` for the media block; see `Conversation`. */
+  mediaProps?: ConversationProps["mediaProps"];
   /** Centres the turns and the composer in a column at most this many px wide; see `Conversation`. Omitted: full width. */
   columnMaxWidth?: number;
   /** Replaces the kit's greeting (avatar plus one line) before the first message, for an app that draws its own hello. */
@@ -136,6 +140,8 @@ export function FullChat({
   attachmentNotice,
   renderAvatar,
   onDownloadFile,
+  renderMedia,
+  mediaProps,
   columnMaxWidth,
   emptyState,
   disabled = false,
@@ -241,6 +247,8 @@ export function FullChat({
             renderExtras={renderExtras}
             renderUserExtras={renderUserExtras}
             onDownloadFile={onDownloadFile}
+            renderMedia={renderMedia}
+            mediaProps={mediaProps}
             columnMaxWidth={columnMaxWidth}
             highlightMessageId={highlightMessageId}
             foldAnswers

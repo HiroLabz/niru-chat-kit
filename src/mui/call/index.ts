@@ -5,6 +5,7 @@ export * from "./call-captions";
 export * from "./call-preview";
 export * from "./call-controls";
 export * from "./call-control-button";
+export * from "./call-microphone";
 export * from "./call-problems";
 export * from "./call-strip";
 export * from "./call-card";

@@ -5,6 +5,7 @@ import Box from "@mui/material/Box";
 import type { HTMLAttributes } from "react";
 import { newestAssistantId } from "../../core/live-turn";
 import { replyEndsWithQuestion } from "../../core/question";
+import type { MediaItem } from "../../core/media";
 import type { ChatMessage, ChatTurnActions, Interrupt } from "../../core/types";
 import { ChatContainer } from "../primitives/chat-container";
 import { Message } from "../primitives/message";
@@ -14,6 +15,7 @@ import { flashOverlayStyles, scrollWithin, useFlash } from "./use-flash";
 import { ConversationTurn, TypingDots } from "./conversation-turn";
 import type { DataAttributes } from "./data-attributes";
 import type { FileDownloader } from "./file-chip";
+import type { MessageMediaProps } from "./message-media";
 import { QuestionCard, type QuestionCardLabels } from "./question-card";
 
 /** A question the agent is waiting on, drawn as a card in the thread after the last turn. */
@@ -64,6 +66,14 @@ export type ConversationProps = {
   /** Drawn inside the transcript after the last turn and the typing row (an open card, a notice), so it scrolls and follows with the conversation. */
   footer?: ReactNode;
   onDownloadFile?: FileDownloader;
+  /**
+   * Images, videos and sounds under an assistant reply (a generated picture, say), drawn above the
+   * sources, files and turn actions. Return undefined or an empty list for none. A reply with media
+   * and no text still shows. Omitted: nothing is drawn. Keep its identity stable.
+   */
+  renderMedia?: (message: ChatMessage) => MediaItem[] | undefined;
+  /** `onOpen`, `onDownload`, `onRetry`, `labels`, `maxColumns` and `maxHeight` for the media block. Keep its identity stable. */
+  mediaProps?: Omit<MessageMediaProps, "items">;
   /**
    * Centres the turns in a column at most this many px wide (never closer than 24 px to the
    * edge) while the transcript itself, and its scrollbar, still span the full width. Omitted
@@ -120,6 +130,8 @@ export function Conversation({
   renderUserExtras,
   footer,
   onDownloadFile,
+  renderMedia,
+  mediaProps,
   columnMaxWidth,
   highlightMessageId,
   question,
@@ -232,6 +244,8 @@ export function Conversation({
               renderExtras={renderExtras}
               renderUserExtras={renderUserExtras}
               onDownloadFile={onDownloadFile}
+              renderMedia={renderMedia}
+              mediaProps={mediaProps}
               avatar={liveAvatar && message.id === liveId ? liveAvatar : agentAvatar}
             />
             )}

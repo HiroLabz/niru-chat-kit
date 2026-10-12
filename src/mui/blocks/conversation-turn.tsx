@@ -7,6 +7,7 @@ import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
 import { filesOfTurn } from "../../core/generated-file";
 import { isStructuredEcho } from "../../core/structured-echo";
 import { hasVisibleActivity, isInternalStep, splitTurnParts } from "../../core/stream/turn-parts";
+import type { MediaItem } from "../../core/media";
 import type { ChatMessage, ChatTurnActions } from "../../core/types";
 import { Loader } from "../primitives/loader";
 import { Markdown } from "../primitives/markdown";
@@ -14,6 +15,7 @@ import { Message } from "../primitives/message";
 import { ThinkingBar } from "../primitives/thinking-bar";
 import { useChatKitStyles } from "../theme";
 import { FileChipList, type FileDownloader } from "./file-chip";
+import { MessageMedia, type MessageMediaProps } from "./message-media";
 import { MessageEditForm } from "./message-edit-form";
 import { MessageNotes } from "./message-notes";
 import { SourceList } from "./source-list";
@@ -71,6 +73,14 @@ export type ConversationTurnProps = {
   renderUserExtras?: (message: ChatMessage) => ReactNode;
   /** Fetches a generated file; without it file chips show no Download button. */
   onDownloadFile?: FileDownloader;
+  /**
+   * Images, videos and sounds to draw under an assistant reply, above the sources, files and turn
+   * actions. Return undefined or an empty list for none. Keep its identity stable: the turn is memoised.
+   * A reply with media and no text still shows.
+   */
+  renderMedia?: (message: ChatMessage) => MediaItem[] | undefined;
+  /** `onOpen`, `onDownload`, `onRetry`, `labels`, `maxColumns` and `maxHeight` for the media block. Keep its identity stable. */
+  mediaProps?: Omit<MessageMediaProps, "items">;
 };
 
 /**
@@ -93,11 +103,15 @@ export const ConversationTurn = memo(function ConversationTurn({
   renderExtras,
   renderUserExtras,
   onDownloadFile,
+  renderMedia,
+  mediaProps,
 }: ConversationTurnProps) {
   const { scheme } = useChatKitStyles();
   const [editing, setEditing] = useState(false);
   const isUser = message.role === "user";
   const serverId = message.serverId;
+  const media = isUser ? undefined : renderMedia?.(message);
+  const hasMedia = Boolean(media?.length);
   const isEditing = editing && isUser && Boolean(actions) && Boolean(serverId);
   // A turn that streamed activity renders as a timeline plus its answer; any other turn,
   // and history (no `parts`), renders as plain text.
@@ -115,6 +129,7 @@ export const ConversationTurn = memo(function ConversationTurn({
     !timelineParts &&
     !hasListedSteps &&
     !message.output &&
+    !hasMedia &&
     (!message.shapingStatus || message.shapingStatus === "none") &&
     !message.citations?.length &&
     message.status !== "stopped" &&
@@ -186,6 +201,7 @@ export const ConversationTurn = memo(function ConversationTurn({
             )}
           </Message.Content>
         )}
+        {hasMedia && media ? <MessageMedia {...mediaProps} items={media} /> : null}
         {isUser ? null : renderExtras?.(message)}
         {isUser ? null : <SourceList citations={message.citations} />}
         {isUser ? null : <FileChipList files={filesOfTurn(message)} onDownload={onDownloadFile} />}

@@ -5,6 +5,7 @@ export * from "./shaping";
 export * from "./structured-echo";
 export * from "./approval-answers";
 export * from "./generated-file";
+export * from "./media";
 export * from "./working-process";
 export * from "./history";
 export * from "./conversation-groups";

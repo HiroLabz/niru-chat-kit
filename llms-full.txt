@@ -180,6 +180,7 @@ export function Chat() {
 - `MessageEditForm`: a user turn opened for editing; Save sends a new branch. Props: `initialText`, `disabled`, `onSave`, `onCancel`.
 - `SourceList`: the Sources row under a reply, from `citations`.
 - `FileChip`, `FileChipList`, `FileDownloader`: generated files with an optional download.
+- `MessageMedia` (core type `MediaItem`): images, videos and sounds under an assistant reply. Props: `items`, `onOpen(item)` (replaces the lightbox), `onDownload(item)`, `onRetry(item)`, `labels` (`MessageMediaLabels`, defaults `DEFAULT_MESSAGE_MEDIA_LABELS`), `maxColumns` (default 2), `maxHeight` (default 360). `MediaItem` is `{ id, kind: "image" | "video" | "audio", src: string | null, status: "loading" | "ready" | "failed", alt?, title?, mime?, width?, height?, poster?, durationSeconds?, filename? }`. `Conversation`, `ConversationTurn` and `FullChat` take `renderMedia(message) => MediaItem[] | undefined` and `mediaProps` (the props above without `items`). Example: `<Conversation messages={m} renderMedia={(msg) => media[msg.id]} mediaProps={{ onDownload }} />`
 - `AgentAvatar`: an agent's avatar (uploaded image or preset). `AVATAR_PRESETS`, `presetById`, `AgentAvatarProps`, `AgentAvatarValue`, `AvatarPreset`, `AvatarAccessory`.
 
 ## Interrupts
@@ -195,7 +196,7 @@ export function Chat() {
 - `VoiceLevelPill`: the default visual, a wide dark pill whose bottom glow rises and ripples with a level. Props: `levels`, `source` (`you`, `agent`, `none`), `height`, `still`. `VoiceLevelPillProps`.
 - `CallOrb`: Niru's orb as the second visual (WebGL shader, CSS circle fallback). Props: `state` (`OrbState`), `levels`, `size`, `label`, `still`. `CallOrbProps`, `orbStateOf(snapshot)`, `OrbState`, `orbColorsOf(colors)`, `DEFAULT_ORB_SIZE`.
 - `CallControlButton`: one round dark control. Props: `label`, `icon`, `onClick`, `active`, `danger`, `disabled`, `size`. `CallControlButtonProps`.
-- `CallStrip`: the minimised call. Props: `session`, `agentName`, `userName`, `labels`, `colors`, `onExpand`. `CallStripProps`.
+- `CallStrip`: the minimised call. Props: `session`, `agentName`, `userName`, `labels`, `colors`, `onExpand` (the main button, labelled `labels.openCall`, "Open call"), `microphones`, `microphoneId`, `onSelectMicrophone` (a "Choose microphone" menu next to Mute). `CallStripProps`. `CallStage` takes the same three microphone props and shows the same menu next to its microphone button; both fall back to `snapshot.microphones`, `snapshot.microphoneId` and `session.selectMicrophone` (all optional on `VoiceSnapshot` and `VoiceSession`, type `VoiceMicrophone { deviceId, label }`). Nothing is drawn when nothing can select.
 - `CallCard`: the finished call in the conversation with a transcript toggle. Props: `summary`, `agentName`, `userName`, `labels`, `defaultOpen`, `onCallAgain`. `CallCardProps`.
 - `CallProblemScreen`: microphone blocked, connection lost, ended. Props: `kind`. `CallProblemKind`, `CallProblemScreenProps`, `problemScreenOf(snapshot)`.
 - `useCallColors(overrides?)`, `CallColors`, `CallColorOverrides`: the call colours, derived from the dark-scheme tokens. `DEFAULT_CALL_LABELS`, `CallLabels`, `CallLabelKey`: every word. `CallPerson`, `CallVisual`: types. `useReducedMotion()`: `prefers-reduced-motion`, kept current.

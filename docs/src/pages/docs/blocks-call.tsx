@@ -93,6 +93,33 @@ function LocalPreview() {
 }
 // #endregion
 
+// #region call-microphone
+function MicrophoneExample() {
+  const [minimised, setMinimised] = useState(false);
+  const session = useMemo(
+    () =>
+      createFakeVoiceSession({
+        microphones: [
+          { deviceId: "built-in", label: "Built-in Microphone" },
+          { deviceId: "usb", label: "USB Headset" },
+        ],
+      }),
+    []
+  );
+  useEffect(() => {
+    session.script.simulateLevels(true);
+    return () => session.script.stop();
+  }, [session]);
+  return minimised ? (
+    <Box sx={{ p: 2 }}>
+      <CallStrip session={session} agentName="Niru" onExpand={() => setMinimised(false)} labels={{ openCall: "Return to call" }} />
+    </Box>
+  ) : (
+    <CallStage session={session} agent={{ name: "Niru" }} autoFocus={false} onMinimise={() => setMinimised(true)} />
+  );
+}
+// #endregion
+
 const IMPORT = `import { createFakeVoiceSession, useVoiceSession, useLocalMedia } from "@hiro/niru-chat-kit";\nimport { CallStage, CallStrip, CallCard } from "@hiro/niru-chat-kit/mui";`;
 
 export const BLOCKS_CALL: Record<string, ComponentDoc> = {
@@ -124,6 +151,11 @@ export const BLOCKS_CALL: Record<string, ComponentDoc> = {
         description: "While a call is minimised, the bar sits directly above the message box. Pass it to FullChat as aboveComposer. When the call ends, a card with the transcript goes into the conversation.",
         maxWidth: 520,
       }),
+      example(raw, "call-microphone", <MicrophoneExample />, {
+        title: "Choosing a microphone, and minimising the call",
+        description: "The small arrow next to the microphone button opens the list. The same arrow is on the bar when you minimise the call with the arrow at the top left or Escape; Return to call brings the full screen back.",
+        height: 560,
+      }),
       example(raw, "call-local-media", <LocalPreview />, {
         title: "Camera and screen share, on this device only",
         description: "The buttons ask your browser for the camera or a screen. The preview stays on this page. Nothing is recorded or sent.",
@@ -140,6 +172,12 @@ export const BLOCKS_CALL: Record<string, ComponentDoc> = {
         </p>
         <p>
           Keyboard: Space mutes or unmutes unless a button has focus. Escape minimises when you pass <C>onMinimise</C>. End needs no confirmation. The status line is the one place a screen reader announces changes, so each change is read out once. Captions are not announced. With reduced motion switched on, the pill and the orb stay still.
+        </p>
+        <p>
+          Choosing a microphone: a session may list <C>microphones</C> and the <C>microphoneId</C> in use in its snapshot and implement <C>selectMicrophone(deviceId)</C>. Or give <C>CallStage</C> and <C>CallStrip</C> the props <C>microphones</C>, <C>microphoneId</C> and <C>onSelectMicrophone</C> yourself, which win over the session. When something can select, a small &quot;Choose microphone&quot; arrow sits next to the microphone button and opens a menu with the one in use checked (<C>menuitemradio</C>). It shows even for a single microphone, so the person can see which one is in use. With an empty list the menu has one disabled row, &quot;No microphone found&quot;. The same arrow is on <C>CallStrip</C>. The kit lists and switches nothing itself: your voice service enumerates the devices and switches the track. Words come from the call <C>labels</C> (<C>chooseMicrophone</C>, <C>noMicrophone</C>, <C>unnamedMicrophone</C>). Without these, nothing new is drawn.
+        </p>
+        <p>
+          Minimising: when you pass <C>onMinimise</C> to <C>CallStage</C>, the header shows a &quot;Minimise call&quot; button and Escape does the same. Your app then stops drawing the stage and draws a <C>CallStrip</C> (for example as <C>aboveComposer</C>) with <C>onExpand</C> set to switch back. The strip&apos;s main button is labelled &quot;Open call&quot; by default; change it with <C>labels.openCall</C> (for example &quot;Return to call&quot;). Both use the same session, so the call keeps running while you switch.
         </p>
         <p>
           Camera and screen sharing use the browser&apos;s <C>getUserMedia</C> and <C>getDisplayMedia</C> through the <C>useLocalMedia</C> hook. They only appear in browsers that have them. A preview shown in a <C>video</C> element needs no change to your page&apos;s Content-Security-Policy. If your server sends a <C>Permissions-Policy</C> header, it must allow <C>camera</C> and <C>display-capture</C> for your own address.

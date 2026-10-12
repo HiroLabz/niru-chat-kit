@@ -29,6 +29,12 @@ export interface CallLabels {
   shareOff: string;
   mute: string;
   unmute: string;
+  /** The caret next to the microphone button that opens the list of microphones. */
+  chooseMicrophone: string;
+  /** The one disabled row when no microphone is listed. */
+  noMicrophone: string;
+  /** A microphone whose browser label is empty. */
+  unnamedMicrophone: string;
   end: string;
   sharing: string;
   stopSharing: string;
@@ -44,6 +50,7 @@ export interface CallLabels {
   endedTitle: string;
   endedBody: string;
   close: string;
+  /** The minimised call's main button, which brings the full screen back. Say "Return to call" if you prefer. */
   openCall: string;
   callWith: string;
   showTranscript: string;
@@ -81,6 +88,9 @@ export const DEFAULT_CALL_LABELS: CallLabels = {
   shareOff: "Stop sharing your screen",
   mute: "Mute microphone",
   unmute: "Unmute microphone",
+  chooseMicrophone: "Choose microphone",
+  noMicrophone: "No microphone found",
+  unnamedMicrophone: "Microphone",
   end: "End call",
   sharing: "Sharing your screen",
   stopSharing: "Stop",

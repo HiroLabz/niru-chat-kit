@@ -12,6 +12,7 @@ import VideocamOffIcon from "@mui/icons-material/VideocamOff";
 import type { LevelSource } from "../../core/voice/voice-levels";
 import { useCall } from "./call-context";
 import { CallControlButton } from "./call-control-button";
+import { MicrophoneMenuButton } from "./call-microphone";
 import { VoiceLevelPill } from "./voice-level-pill";
 
 export interface CallStageControlsProps {
@@ -31,12 +32,12 @@ const ROUND = { width: { xs: 44, sm: 56 }, height: { xs: 44, sm: 56 } } as const
 const PILL = { height: { xs: 44, sm: 56 }, minWidth: { xs: 40, sm: 96 } } as const;
 
 /**
- * The bottom row, left to right: camera, share screen, the voice-level pill, microphone, end. A
+ * The bottom row, left to right: camera, share screen, the voice-level pill, microphone, the "Choose microphone" caret (only when the session or the stage can select a microphone), end. A
  * button is drawn only when the session reports its capability; End is always there and needs no
  * confirmation. With the `orb` visual the pill is left out because the orb in the centre moves instead.
  */
 export function CallStageControls({ children }: CallStageControlsProps) {
-  const { session, snapshot, t, visual } = useCall();
+  const { session, snapshot, t, visual, microphone, colors } = useCall();
   const { capabilities, cameraOn, screenOn, muted, phase } = snapshot;
   const open = phase !== "ended" && phase !== "failed";
   return (
@@ -79,6 +80,7 @@ export function CallStageControls({ children }: CallStageControlsProps) {
               onClick={() => session.setMuted(!muted)}
             />
           ) : null}
+          {microphone ? <MicrophoneMenuButton picker={microphone} colors={colors} t={t} disabled={!open} sx={{ ml: -0.5 }} /> : null}
           <CallControlButton label={t("end")} danger sx={ROUND} icon={<CallEndIcon />} onClick={() => session.end()} />
         </>
       )}
