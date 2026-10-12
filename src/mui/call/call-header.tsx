@@ -29,7 +29,7 @@ export function CallStageHeader({ menu, avatar, children }: CallStageHeaderProps
   const iconSx = { color: colors.text, "&.Mui-focusVisible": { outline: `2px solid ${colors.text}` } } as const;
   const open = snapshot.phase !== "ended" && snapshot.phase !== "failed" && snapshot.phase !== "connecting";
   return (
-    <Box component="header" data-testid="call-header" sx={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, p: 2 }}>
+    <Box component="header" data-testid="call-header" sx={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, p: { xs: 1.5, sm: 2 }, minWidth: 0 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, minWidth: 40 }}>
         {menu ?? call.menu}
         {call.onMinimise ? (

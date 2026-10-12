@@ -55,6 +55,8 @@ export function CallStagePreview() {
             top: 76,
             left: "50%",
             transform: "translateX(-50%)",
+            maxWidth: "calc(100% - 24px)",
+            boxSizing: "border-box",
             zIndex: 2,
             display: "flex",
             alignItems: "center",

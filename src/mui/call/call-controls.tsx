@@ -26,6 +26,10 @@ export function pillSource(phase: string, muted: boolean): LevelSource {
   return "none";
 }
 
+/** Round buttons are 44 px on a phone and 56 px from the `sm` breakpoint up, so five of them fit 320 px. */
+const ROUND = { width: { xs: 44, sm: 56 }, height: { xs: 44, sm: 56 } } as const;
+const PILL = { height: { xs: 44, sm: 56 }, minWidth: { xs: 40, sm: 96 } } as const;
+
 /**
  * The bottom row, left to right: camera, share screen, the voice-level pill, microphone, end. A
  * button is drawn only when the session reports its capability; End is always there and needs no
@@ -40,7 +44,7 @@ export function CallStageControls({ children }: CallStageControlsProps) {
       role="group"
       aria-label={t("region")}
       data-testid="call-controls"
-      sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1.5, width: "100%", maxWidth: 560, mx: "auto", px: 2, pb: 3, boxSizing: "border-box" }}
+      sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: { xs: 1, sm: 1.5 }, width: "100%", maxWidth: 560, minWidth: 0, mx: "auto", px: { xs: 1.5, sm: 2 }, pb: { xs: 2, sm: 3 }, boxSizing: "border-box" }}
     >
       {children ?? (
         <>
@@ -49,6 +53,7 @@ export function CallStageControls({ children }: CallStageControlsProps) {
               label={cameraOn ? t("cameraOff") : t("cameraOn")}
               active={cameraOn}
               disabled={!open}
+              sx={ROUND}
               icon={cameraOn ? <VideocamIcon /> : <VideocamOffIcon />}
               onClick={() => void session.setCamera(!cameraOn)}
             />
@@ -58,21 +63,23 @@ export function CallStageControls({ children }: CallStageControlsProps) {
               label={screenOn ? t("shareOff") : t("shareOn")}
               active={screenOn}
               disabled={!open}
+              sx={ROUND}
               icon={screenOn ? <StopScreenShareIcon /> : <PresentToAllIcon />}
               onClick={() => void session.setScreenShare(!screenOn)}
             />
           ) : null}
-          {visual === "pill" ? <VoiceLevelPill levels={session.levels} source={pillSource(phase, muted)} /> : <Box sx={{ flex: "1 1 auto" }} />}
+          {visual === "pill" ? <VoiceLevelPill levels={session.levels} source={pillSource(phase, muted)} sx={PILL} /> : <Box sx={{ flex: "1 1 auto" }} />}
           {capabilities.mute ? (
             <CallControlButton
               label={muted ? t("unmute") : t("mute")}
               active={muted}
               disabled={!open}
+              sx={ROUND}
               icon={muted ? <MicOffIcon /> : <MicIcon />}
               onClick={() => session.setMuted(!muted)}
             />
           ) : null}
-          <CallControlButton label={t("end")} danger icon={<CallEndIcon />} onClick={() => session.end()} />
+          <CallControlButton label={t("end")} danger sx={ROUND} icon={<CallEndIcon />} onClick={() => session.end()} />
         </>
       )}
     </Box>

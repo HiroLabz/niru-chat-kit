@@ -52,6 +52,12 @@ export type ChatContainerRootProps = {
    * say "the person just sent something, watch what comes back" (the id of their newest turn).
    */
   rearmKey?: string | null;
+  /**
+   * Following lets go whenever this changes to a new non-null value, so a surface can scroll
+   * to something in the middle of the transcript (a highlighted message) without the log
+   * pulling back down to the newest turn. Scrolling to the bottom resumes following.
+   */
+  holdKey?: string | null;
   /** Show the floating "jump to latest" button once scrolled away from the bottom. */
   scrollButton?: boolean;
   sx?: BoxProps["sx"];
@@ -66,6 +72,7 @@ export type ChatContainerRootProps = {
 function ChatContainerRoot({
   children,
   rearmKey = null,
+  holdKey = null,
   scrollButton = true,
   sx,
   className,
@@ -79,14 +86,28 @@ function ChatContainerRoot({
   const logRef = useRef<HTMLDivElement | null>(null);
   const followBottomRef = useRef(true);
   const lastRearmRef = useRef<string | null>(null);
+  const lastHoldRef = useRef<string | null>(null);
+  // While held, reaching the bottom (including by our own earlier scrolling, whose scroll event arrives late) does not resume following; only the person can.
+  const heldRef = useRef(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Re-arming must stay ABOVE the scrolling effect: effects run in declaration order, so
   // this is what re-arms the flag that one then reads on the same commit.
   useLayoutEffect(() => {
-    if (rearmKey && rearmKey !== lastRearmRef.current) followBottomRef.current = true;
+    if (rearmKey && rearmKey !== lastRearmRef.current) {
+      followBottomRef.current = true;
+      heldRef.current = false;
+    }
     lastRearmRef.current = rearmKey;
   }, [rearmKey]);
+
+  useLayoutEffect(() => {
+    if (holdKey && holdKey !== lastHoldRef.current) {
+      followBottomRef.current = false;
+      heldRef.current = true;
+    }
+    lastHoldRef.current = holdKey;
+  }, [holdKey]);
 
   useLayoutEffect(() => {
     const node = logRef.current;
@@ -118,6 +139,7 @@ function ChatContainerRoot({
     const node = logRef.current;
     if (!node) return;
     followBottomRef.current = true;
+    heldRef.current = false;
     node.scrollTop = node.scrollHeight;
     setIsAtBottom(true);
   }, []);
@@ -131,18 +153,24 @@ function ChatContainerRoot({
           ref={logRef}
           onWheel={(event) => {
             followBottomRef.current = false;
+            heldRef.current = false;
             onWheel?.(event);
           }}
           onTouchStart={(event) => {
             followBottomRef.current = false;
+            heldRef.current = false;
             onTouchStart?.(event);
           }}
           onPointerDown={(event) => {
             followBottomRef.current = false;
+            heldRef.current = false;
             onPointerDown?.(event);
           }}
           onKeyDown={(event) => {
-            if (SCROLLING_KEYS.has(event.key)) followBottomRef.current = false;
+            if (SCROLLING_KEYS.has(event.key)) {
+              followBottomRef.current = false;
+              heldRef.current = false;
+            }
             onKeyDown?.(event);
           }}
           // Following is given up on any touch of the log, including a click that selects
@@ -161,7 +189,7 @@ function ChatContainerRoot({
           onScroll={(event) => {
             const node = event.currentTarget;
             const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight <= FOLLOW_BOTTOM_SLACK_PX;
-            if (atBottom) followBottomRef.current = true;
+            if (atBottom && !heldRef.current) followBottomRef.current = true;
             setIsAtBottom(atBottom);
             onScroll?.(event);
           }}

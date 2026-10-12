@@ -47,6 +47,24 @@ The site uses hash addresses (`/#/core`, `/#/primitives/tool`), so every page is
 
 The build copies `llms.txt` and `llms-full.txt` from the repo root into the site, so they are served at `<base>llms.txt`. If those files are missing, the build skips them.
 
+## Check that it fits a phone
+
+`pnpm check:responsive` builds the site, opens every page in the navigation and the demo (a plain chat, replies with tools, a table, code, an approval card and sources, a running call and the minimised call bar) at 320, 390, 768 and 1280 px wide in light and dark, and fails if a page scrolls sideways or the call screen does not cover the window. It also saves screenshots at 390 px to `docs/test-results/` (not committed) so you can look at them.
+
+1. Install the browser once. It is a Chromium that Playwright manages itself.
+
+   ```sh
+   npx playwright install chromium
+   ```
+
+2. Run the check.
+
+   ```sh
+   pnpm check:responsive
+   ```
+
+   You should see a line saying how many page states were checked and "No page scrolls sideways and the call stage covers the screen." Add `-- --skip-build` to reuse the `dist` that is already built, or `-- --only=demo` to check only the routes that contain that text.
+
 ## No network at runtime
 
 The built page carries a Content-Security-Policy, a browser rule that allows it to load things only from its own address. Fonts are system fonts. The kit's `Source` component normally asks Google's favicon service for a small icon. At build time that request is replaced with a local icon (`vite.config.ts`). Code colouring uses the full Shiki build, so every Shiki language and theme works. Each language is its own file and is fetched only when a page shows that language, which is why the built site is about 13 MB. If a visitor turns on voice input, the browser uses its own speech service.

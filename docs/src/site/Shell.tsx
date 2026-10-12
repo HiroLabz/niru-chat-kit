@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
@@ -26,6 +27,8 @@ export function Shell() {
   const theme = useTheme();
   const wide = useMediaQuery(theme.breakpoints.up("md"));
   const extraWide = useMediaQuery(theme.breakpoints.up("xl"));
+  // On a phone the Live demo and GitHub links move into the navigation drawer.
+  const roomy = useMediaQuery(theme.breakpoints.up("sm"));
   const [open, setOpen] = useState(false);
   const { mode, toggle } = useMode();
   const { pathname } = useLocation();
@@ -67,21 +70,25 @@ export function Shell() {
         Skip to content
       </Link>
       <AppBar position="sticky" color="inherit" elevation={0} component="header" sx={{ borderBottom: 1, borderColor: "divider", bgcolor: "background.paper" }}>
-        <Toolbar sx={{ gap: 1 }}>
+        <Toolbar sx={{ gap: 1, minWidth: 0 }}>
           {!wide ? (
             <IconButton edge="start" aria-label="Open navigation" onClick={() => setOpen(true)}>
               <MenuIcon />
             </IconButton>
           ) : null}
-          <Typography component={RouterLink} to="/" variant="h6" sx={{ color: "inherit", textDecoration: "none", fontWeight: 700, mr: "auto" }}>
+          <Typography component={RouterLink} to="/" variant="h6" noWrap sx={{ color: "inherit", textDecoration: "none", fontWeight: 700, mr: "auto", minWidth: 0 }}>
             niru-chat-kit
           </Typography>
-          <Button component={RouterLink} to="/demo" variant="contained" size="small">
-            Live demo
-          </Button>
-          <Button component="a" href={REPO} target="_blank" rel="noopener noreferrer" size="small" color="inherit">
-            GitHub
-          </Button>
+          {roomy ? (
+            <>
+              <Button component={RouterLink} to="/demo" variant="contained" size="small">
+                Live demo
+              </Button>
+              <Button component="a" href={REPO} target="_blank" rel="noopener noreferrer" size="small" color="inherit">
+                GitHub
+              </Button>
+            </>
+          ) : null}
           <Tooltip title={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
             <IconButton onClick={toggle} aria-label={mode === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
               {mode === "dark" ? <LightModeOutlined /> : <DarkModeOutlined />}
@@ -101,6 +108,16 @@ export function Shell() {
         ) : (
           <Drawer open={open} onClose={() => setOpen(false)}>
             <Box component="nav" aria-label="Documentation" sx={{ width: NAV_WIDTH, p: 2 }}>
+              {roomy ? null : (
+                <Stack spacing={1} sx={{ mb: 2 }}>
+                  <Button component={RouterLink} to="/demo" variant="contained" size="small" onClick={() => setOpen(false)}>
+                    Live demo
+                  </Button>
+                  <Button component="a" href={REPO} target="_blank" rel="noopener noreferrer" size="small" color="inherit" variant="outlined">
+                    GitHub
+                  </Button>
+                </Stack>
+              )}
               <SideNav onNavigate={() => setOpen(false)} />
             </Box>
           </Drawer>

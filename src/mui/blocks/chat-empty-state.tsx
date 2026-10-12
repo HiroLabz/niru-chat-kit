@@ -6,6 +6,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Message } from "../primitives/message";
 import { PromptSuggestion } from "../primitives/prompt-suggestion";
+import { pillRowSx } from "./composer-pills";
 
 const EMPTY_STATE_AVATAR_SIZE = 44;
 
@@ -43,8 +44,9 @@ export function ChatEmptyState({
         alignItems: "center",
         justifyContent: "center",
         gap: 2,
-        px: 3,
+        px: { xs: 2, sm: 3 },
         py: 4,
+        minWidth: 0,
         textAlign: "center",
       }}
     >
@@ -53,7 +55,7 @@ export function ChatEmptyState({
         {greeting}
       </Typography>
       {suggestions.length > 0 ? (
-        <Stack direction="row" sx={{ flexWrap: "wrap", justifyContent: "center", gap: 1 }}>
+        <Stack direction="row" sx={{ ...pillRowSx, justifyContent: { xs: "flex-start", sm: "center" }, gap: 1 }}>
           {suggestions.map((prompt) => (
             <PromptSuggestion
               key={prompt}

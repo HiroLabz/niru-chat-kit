@@ -23,6 +23,8 @@ export type Scenario = {
   /** What the run shows, for the demo's capability list. */
   shows: string;
   steps: (ctx: RunContext) => ScriptStep[];
+  /** For a scenario that pauses on a question: the reply once it is answered. Default: the delivery reply. */
+  afterAnswer?: (answer: string) => string;
 };
 
 const WORDS_PER_TOKEN = 3;

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import Avatar from "@mui/material/Avatar";
-import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
@@ -59,16 +58,15 @@ export function DemoCallLayer({ call }: { call: DemoCall }) {
     <>
       <CallEndWatcher session={session} onEnded={call.finish} />
       {call.minimised ? null : (
-        <Box sx={{ position: "absolute", inset: 0, zIndex: 5 }}>
-          <CallStage
-            session={session}
-            agent={{ ...AGENT, avatar: <AgentAvatar avatar={{ kind: "preset", preset_id: "hiro-02" }} name={AGENT.name} size={96} /> }}
-            user={{ avatar: <Avatar sx={{ width: 36, height: 36, fontSize: 16 }}>V</Avatar> }}
-            menu={<MenuSlot onMinimise={call.minimise} />}
-            onMinimise={call.minimise}
-            onClose={() => session.end()}
-          />
-        </Box>
+        <CallStage
+          overlay
+          session={session}
+          agent={{ ...AGENT, avatar: <AgentAvatar avatar={{ kind: "preset", preset_id: "hiro-02" }} name={AGENT.name} size={96} /> }}
+          user={{ avatar: <Avatar sx={{ width: 36, height: 36, fontSize: 16 }}>V</Avatar> }}
+          menu={<MenuSlot onMinimise={call.minimise} />}
+          onMinimise={call.minimise}
+          onClose={() => session.end()}
+        />
       )}
     </>
   );

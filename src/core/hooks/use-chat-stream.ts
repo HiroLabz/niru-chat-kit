@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { APPROVAL_INTERRUPT_KIND, approvalAnswerLabel } from "../approval-answers";
+import { isQuestionInterrupt } from "../question";
 import { filesFromRow, readCitationCheck } from "../history";
 import { shapingFromResult } from "../stream/parse-sse";
 import { ChatTransportError } from "../transport";
@@ -130,6 +131,11 @@ export function useChatStream<TParams extends object = Record<string, unknown>>(
   );
 
   const reloadRef = useRef<() => Promise<void>>(async () => undefined);
+  /** The question the run last paused on, kept past `setInterrupt(null)` so a retried answer still knows it. */
+  const askedRef = useRef<Interrupt | null>(null);
+  useEffect(() => {
+    if (interrupt) askedRef.current = interrupt;
+  }, [interrupt]);
 
   /**
    * `echo` adds the message as a user turn; a regenerated or edited question is already
@@ -191,10 +197,14 @@ export function useChatStream<TParams extends object = Record<string, unknown>>(
       const kind = interruptKind ?? interrupt?.kind ?? "ask_user";
       const controller = beginTurn({ kind: "resume", answer, values, interruptKind: kind });
       clearFollowUps();
+      const asked = interrupt ?? askedRef.current;
       setInterrupt(null);
       appendTurn({
         role: "user",
         text: kind === APPROVAL_INTERRUPT_KIND ? approvalAnswerLabel(answer) : answer,
+        ...(kind !== APPROVAL_INTERRUPT_KIND && isQuestionInterrupt(asked)
+          ? { answersQuestion: { question: asked.question, options: asked.options?.length ? asked.options : undefined } }
+          : {}),
       });
       try {
         const data = await transport.resume(

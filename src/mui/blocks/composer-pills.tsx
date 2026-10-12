@@ -7,6 +7,22 @@ import { PromptSuggestion } from "../primitives/prompt-suggestion";
 export const FOLLOW_UPS_LABEL = "Suggested follow-ups";
 
 /**
+ * How a row of suggestion pills behaves: wrapped onto several lines from the `sm` breakpoint up; on a
+ * narrower screen one line that scrolls sideways inside its own box, with snapping, so a dozen pills
+ * do not push the chat off the screen. Shared by the pills above the composer and the empty state.
+ */
+export const pillRowSx = {
+  minWidth: 0,
+  maxWidth: "100%",
+  flexWrap: { xs: "nowrap", sm: "wrap" },
+  overflowX: { xs: "auto", sm: "visible" },
+  scrollSnapType: { xs: "x proximity", sm: "none" },
+  scrollbarWidth: "none",
+  "&::-webkit-scrollbar": { display: "none" },
+  "& > *": { flexShrink: 0, scrollSnapAlign: "start" },
+} as const;
+
+/**
  * A wrapping row of rounded suggestion pills that sits directly above the message box.
  * Picking one hands its text to `onSelect`; the host decides what that does. Renders
  * nothing for an empty list.
@@ -32,7 +48,7 @@ export function SuggestionPills({
       role="group"
       aria-label={label}
       className={className}
-      sx={[{ flexWrap: "wrap", gap: 0.75, minWidth: 0, mb: 1 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+      sx={[{ ...pillRowSx, gap: 0.75, mb: 1 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
     >
       {suggestions.map((text) => (
         <PromptSuggestion key={text} variant="pill" onSelect={onSelect}>

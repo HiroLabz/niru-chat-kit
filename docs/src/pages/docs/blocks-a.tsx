@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -10,6 +12,7 @@ import {
   Composer,
   ComposerPills,
   Conversation,
+  ConversationHeader,
   FullChat,
   MessageNotes,
   SuggestionPills,
@@ -38,6 +41,24 @@ function ConversationStates() {
 }
 // #endregion
 
+// #region conversation-highlight
+function HighlightExample() {
+  const [target, setTarget] = useState<string | undefined>();
+  return (
+    <Stack spacing={1.5}>
+      <Stack direction="row" spacing={1}>
+        <Button size="small" variant="outlined" onClick={() => setTarget(USER_TURN.id)}>Highlight the question</Button>
+        <Button size="small" variant="outlined" onClick={() => setTarget(SETTLED_TURN.id)}>Highlight the reply</Button>
+        <Button size="small" onClick={() => setTarget(undefined)}>Clear</Button>
+      </Stack>
+      <Box sx={{ height: 300, display: "flex", flexDirection: "column" }}>
+        <Conversation messages={[USER_TURN, SETTLED_TURN]} highlightMessageId={target} />
+      </Box>
+    </Stack>
+  );
+}
+// #endregion
+
 // #region message-notes
 function Notes() {
   return (
@@ -60,6 +81,24 @@ function FullChatExample() {
       greeting="Pick a starter or type a word such as markdown, code or error."
       starters={STARTERS.slice(0, 4)}
       onAttach={() => undefined}
+    />
+  );
+}
+// #endregion
+
+// #region full-chat-header
+function FullChatHeader() {
+  const [transport] = useState(() => createReplayTransport());
+  const stream = useChatStream(transport);
+  const [pinned, setPinned] = useState(false);
+  const [saved, setSaved] = useState(false);
+  return (
+    <FullChat
+      stream={stream}
+      agent={{ name: "Demo agent", initial: "D" }}
+      greeting="The bar above this chat comes from the header prop."
+      starters={STARTERS.slice(0, 2)}
+      header={<ConversationHeader title="Refund policy" pinned={pinned} onPinChange={setPinned} saved={saved} onSaveChange={setSaved} />}
     />
   );
 }
@@ -170,9 +209,10 @@ export const BLOCKS_A: Record<string, ComponentDoc> = {
     api: ["Conversation", "ConversationTurn", "MessageNotes"],
     examples: [
       example(raw, "conversation-states", <ConversationStates />, { title: "The states a reply goes through", description: "In order: streaming, waiting for the first word, a tool running, finished with every button, then stopped and not backed by sources." }),
+      example(raw, "conversation-highlight", <HighlightExample />, { title: "Scroll to a message and highlight it", description: "Press a button. The list scrolls to that message and tints it for about two and a half seconds. To highlight the same message again, press Clear first, because the highlight runs when the value changes." }),
       example(raw, "message-notes", <Notes />, { title: "Notes under an answer", description: "How a finished answer ended: cut short by Stop, or not backed by the sources it had." }),
     ],
-    notes: <>To get the regenerate, edit and version buttons, pass <C>turnActions</C> from <C>useChatStream</C>. See <C>TurnActions</C> for what each button does.</>,
+    notes: <>To get the regenerate, edit and version buttons, pass <C>turnActions</C> from <C>useChatStream</C>. See <C>TurnActions</C> for what each button does. To bring a message into view, for example when someone opens a saved reply, pass its id as <C>highlightMessageId</C>. The list scrolls inside its own scroll area and never moves the page. With reduced motion turned on in the system, the message gets a still outline instead of a fade. Each message sits in an element with a <C>data-message-id</C> attribute.</>,
   },
   "full-chat": {
     summary: "A whole chat in one component: the message list, a greeting, an error banner with Retry, question cards when the agent waits for an answer, suggestion pills and the message box. Give it the result of useChatStream. We recommend starting here and swapping in smaller parts only when you need to.",
@@ -180,9 +220,10 @@ export const BLOCKS_A: Record<string, ComponentDoc> = {
     api: ["FullChat"],
     examples: [
       example(raw, "full-chat", <FullChatExample />, { title: "A live chat on made-up replies", description: "This is a real useChatStream run. Try a starter, regenerate a reply, type refund to get an approval card, or type error to get a failed run.", height: 560 }),
+      example(raw, "full-chat-header", <FullChatHeader />, { title: "A header above the chat", description: "Pass a ConversationHeader, or any node, as header. It sits above the message list. Pin and Save only report the click; this example keeps the two values in state.", height: 520 }),
       example(raw, "full-chat-call", <FullChatCall />, { title: "A call button and the call strip", description: "onStartCall adds a round phone button next to Send. While a call is minimised, pass the CallStrip as aboveComposer. Click the strip here to dismiss it.", height: 560 }),
     ],
-    notes: <>For the phone button, pass <C>onStartCall</C>, and optionally <C>callLabel</C> and <C>callDisabled</C>. To put something such as a <C>CallStrip</C> directly above the message box or the question card, pass it as <C>aboveComposer</C>. The <C>/demo</C> page adds a history sidebar, voice, toggles, attachments and delete on top of this.</>,
+    notes: <>To scroll to one message and highlight it, pass its id as <C>highlightMessageId</C>; it works as on <C>Conversation</C>. For the phone button, pass <C>onStartCall</C>, and optionally <C>callLabel</C> and <C>callDisabled</C>. To put something such as a <C>CallStrip</C> directly above the message box or the question card, pass it as <C>aboveComposer</C>. The <C>/demo</C> page adds a history sidebar, voice, toggles, attachments and delete on top of this.</>,
   },
   composer: {
     summary: "The message box at the bottom of the chat, with its buttons: attach, send and stop. Attachments and settings sit inside the same box, suggestions appear above it, and you can add voice, toggles and a More menu. Use it when you build your own layout; FullChat already includes one.",

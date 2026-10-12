@@ -8,7 +8,7 @@ import { APPROVAL_INTERRUPT_KIND } from "../../core/approval-answers";
 import type { Interrupt } from "../../core/types";
 import { blend, readableOn, useChatKitStyles } from "../theme";
 import { ApprovalCard } from "./approval-card";
-import { QuestionCard } from "./question-card";
+import { AnswerBox } from "./answer-box";
 
 /**
  * Why the run stopped, said before anything else.
@@ -89,7 +89,7 @@ export function InterruptPrompt({
       {isApproval ? (
         <ApprovalCard interrupt={interrupt as ApprovalInterrupt} onAnswer={onAnswer} pending={pending} inkSx={pausedInk} />
       ) : (
-        <QuestionCard value={answer} onChange={setAnswer} pending={pending} autoFocus={autoFocus} />
+        <AnswerBox value={answer} onChange={setAnswer} pending={pending} autoFocus={autoFocus} />
       )}
     </Box>
   );

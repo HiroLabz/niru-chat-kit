@@ -188,3 +188,26 @@ describe("Composer", () => {
     });
   });
 });
+
+describe("Composer answering a question", () => {
+  const props = { value: "", onChange: vi.fn(), onSubmit: vi.fn() };
+
+  it("shows the Answering chip and the answer placeholder", () => {
+    render(<Composer {...props} answering={{ question: "Where will you be staying?" }} />);
+    expect(screen.getByText("Answering: Where will you be staying?")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Type your answer")).toBeInTheDocument();
+  });
+
+  it("changes nothing without it", () => {
+    render(<Composer {...props} placeholder="Ask anything" />);
+    expect(screen.queryByText(/Answering/)).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Ask anything")).toBeInTheDocument();
+  });
+
+  it("still sends the typed text", () => {
+    const onSubmit = vi.fn();
+    render(<Composer {...props} value="March 14" onSubmit={onSubmit} answering={{ question: "When?" }} />);
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+});

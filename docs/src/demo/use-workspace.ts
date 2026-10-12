@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { ChatHistoryItem } from "@hiro/niru-chat-kit/mui";
-import { createConversation, seededConversations, type DemoConversation } from "./conversations";
+import { createConversation, seededConversations, seededLibrary, type DemoConversation } from "./conversations";
 
 /**
  * The demo's conversations: a few past ones, plus whatever the visitor starts. Each has its own
@@ -59,6 +59,11 @@ export function useWorkspace(speed: () => number) {
     [activeId, speed]
   );
 
+  /** The pins and saved items the demo starts with, built from the seeded chats. */
+  const seedLibrary = useCallback(() => seededLibrary(listed.map((id) => store.current.get(id)).filter((conv): conv is DemoConversation => Boolean(conv))), [listed]);
+  /** Whether a conversation exists in this visit. */
+  const knows = useCallback((id: string) => store.current.has(id), []);
+
   const items: ChatHistoryItem[] = useMemo(
     () =>
       listed.flatMap((id) => {
@@ -69,5 +74,5 @@ export function useWorkspace(speed: () => number) {
     [listed, activeId, version]
   );
 
-  return { active, activeId, items, select: setActiveId, newChat, adopt, rename, remove };
+  return { active, activeId, items, select: setActiveId, newChat, adopt, rename, remove, seedLibrary, knows };
 }

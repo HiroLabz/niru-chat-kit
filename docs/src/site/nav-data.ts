@@ -32,6 +32,7 @@ export const BLOCKS = [
   ["composer", "Composer"],
   ["composer-pills", "ComposerPills"],
   ["chat-empty-state", "ChatEmptyState"],
+  ["conversation-header", "ConversationHeader"],
   ["chat-history-sidebar", "ChatHistorySidebar"],
   ["turn-timeline", "TurnTimeline"],
   ["turn-actions", "TurnActions"],

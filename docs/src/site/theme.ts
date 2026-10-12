@@ -23,7 +23,7 @@ export function siteTheme(mode: Mode): Theme {
     shape: { borderRadius: 10 },
     typography: {
       fontFamily: SANS,
-      h1: { fontSize: "2.25rem", fontWeight: 700, letterSpacing: -0.5 },
+      h1: { fontSize: "2.25rem", fontWeight: 700, letterSpacing: -0.5, "@media (max-width:599.95px)": { fontSize: "1.75rem" } },
       h2: { fontSize: "1.5rem", fontWeight: 650, letterSpacing: -0.25 },
       h3: { fontSize: "1.15rem", fontWeight: 650 },
     },
@@ -32,6 +32,7 @@ export function siteTheme(mode: Mode): Theme {
       MuiCssBaseline: {
         styleOverrides: {
           "a:focus-visible, button:focus-visible": { outlineOffset: 2 },
+          "h1, h2, h3": { overflowWrap: "anywhere" },
         },
       },
     },

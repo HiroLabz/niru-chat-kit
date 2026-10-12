@@ -15,6 +15,7 @@ import { useChatKitStyles } from "../theme";
 import { FeedbackBar } from "../primitives/feedback-bar";
 import { TurnCopyButton } from "./turn-copy-button";
 import { TurnDeleteButton } from "./turn-delete-button";
+import { TurnSaveButton } from "./turn-save-button";
 
 function SiblingSwitcher({
   siblingIds,
@@ -114,14 +115,21 @@ export function TurnActions({
           ? (actions.renderCopy?.(message) ?? null)
           : null;
   const extraActions = isUser || !message.text ? null : (actions.renderExtraActions?.(message) ?? null);
+  const onSave = actions.onSave;
+  // Saving needs only the text, like Copy; user messages are left out to keep the row about replies.
+  const saveAction =
+    isUser || !message.text || !onSave ? null : (
+      <TurnSaveButton message={message} saved={Boolean(actions.isSaved?.(message))} onSave={onSave} />
+    );
   const onDelete = actions.onDelete;
   const deleteAction = onDelete ? (
     <TurnDeleteButton message={message} onDelete={onDelete} disabled={actions.disabled} />
   ) : null;
   if (!serverId) {
-    return copyAction || extraActions || deleteAction ? (
-      <Stack direction="row" data-chat="actions" sx={scheme((c) => ({ alignItems: "center", mt: 0.25, color: c.mutedText }))}>
+    return copyAction || saveAction || extraActions || deleteAction ? (
+      <Stack direction="row" data-chat="actions" sx={scheme((c) => ({ alignItems: "center", flexWrap: "wrap", rowGap: 0.25, minWidth: 0, mt: 0.25, color: c.mutedText }))}>
         {copyAction}
+        {saveAction}
         {extraActions}
         {deleteAction}
       </Stack>
@@ -134,13 +142,13 @@ export function TurnActions({
   const onRegenerate = actions.onRegenerate;
   const showEdit = isUser ? Boolean(actions.onEdit) && actions.canEdit !== false : Boolean(onRegenerate);
   const showBranches = siblingIds.length > 1 && Boolean(actions.onSwitchBranch);
-  if (!showEdit && !showBranches && !copyAction && !onFeedback && !extraActions && !deleteAction) return null;
+  if (!showEdit && !showBranches && !copyAction && !saveAction && !onFeedback && !extraActions && !deleteAction) return null;
   return (
     <Stack
       direction="row"
       spacing={0.25}
       data-chat="actions"
-      sx={scheme((c) => ({ alignItems: "center", mt: 0.25, color: c.mutedText }))}
+      sx={scheme((c) => ({ alignItems: "center", flexWrap: "wrap", rowGap: 0.25, minWidth: 0, mt: 0.25, color: c.mutedText }))}
     >
       {showBranches ? (
         <SiblingSwitcher siblingIds={siblingIds} index={index} actions={actions} />
@@ -160,6 +168,7 @@ export function TurnActions({
         </Tooltip>
       ) : null}
       {copyAction}
+      {saveAction}
       {!isUser && onFeedback ? (
         <FeedbackRatingBar serverId={serverId} disabled={actions.disabled} onFeedback={onFeedback} />
       ) : null}

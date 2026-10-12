@@ -18,7 +18,9 @@ import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import { alpha } from "@mui/material/styles";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PushPinIcon from "@mui/icons-material/PushPin";
 import { useChatKitStyles } from "../theme";
+import { flashStyles } from "./use-flash";
 
 export type ChatHistoryLabels = {
   conversations: string;
@@ -40,6 +42,21 @@ export type ChatHistoryLabels = {
   previous7: string;
   previous30: string;
   older: string;
+  /** Heading of the group of pinned conversations. */
+  pinnedGroup: string;
+  pin: string;
+  unpin: string;
+  /** The two tabs, shown when `saved` is given. */
+  chatsTab: string;
+  savedTab: string;
+  /** The Saved list when nothing is saved. */
+  savedEmpty: string;
+  /** What a saved row is, for a screen reader and the icon's tooltip. */
+  savedChat: string;
+  savedMessage: string;
+  /** The line under a saved row, for example "Saved 2 days ago". */
+  savedAt: (when: string) => string;
+  unsave: string;
 };
 
 export const DEFAULT_HISTORY_LABELS: ChatHistoryLabels = {
@@ -62,6 +79,16 @@ export const DEFAULT_HISTORY_LABELS: ChatHistoryLabels = {
   previous7: "Previous 7 days",
   previous30: "Previous 30 days",
   older: "Older",
+  pinnedGroup: "Pinned",
+  pin: "Pin",
+  unpin: "Unpin",
+  chatsTab: "Chats",
+  savedTab: "Saved",
+  savedEmpty: "Nothing saved yet.",
+  savedChat: "Saved chat",
+  savedMessage: "Saved message",
+  savedAt: (when) => `Saved ${when}`,
+  unsave: "Remove from saved",
 };
 
 export function ChatHistoryRow({
@@ -72,6 +99,9 @@ export function ChatHistoryRow({
   onSelect,
   onRename,
   onDelete,
+  pinned = false,
+  onPin,
+  highlighted = false,
   labels,
 }: {
   id: string;
@@ -81,6 +111,11 @@ export function ChatHistoryRow({
   onSelect: () => void;
   onRename?: (id: string, title: string) => void;
   onDelete?: (id: string) => void;
+  pinned?: boolean;
+  /** Adds Pin / Unpin to the row's menu. */
+  onPin?: (id: string, pinned: boolean) => void;
+  /** Flashes the row with the accent tint (an outline under reduced motion). */
+  highlighted?: boolean;
   labels: ChatHistoryLabels;
 }) {
   const { scheme } = useChatKitStyles();
@@ -89,7 +124,7 @@ export function ChatHistoryRow({
   const [draft, setDraft] = useState(title);
   const [confirming, setConfirming] = useState(false);
   const menuId = useId();
-  const hasMenu = Boolean(onRename || onDelete);
+  const hasMenu = Boolean(onRename || onDelete || onPin);
 
   function commitRename() {
     const next = draft.trim();
@@ -125,6 +160,8 @@ export function ChatHistoryRow({
   return (
     <ListItem
       disablePadding
+      data-chat-history-id={id}
+      data-highlighted={highlighted ? "true" : undefined}
       secondaryAction={
         hasMenu ? (
           <IconButton
@@ -152,12 +189,36 @@ export function ChatHistoryRow({
           "&:hover": { bgcolor: c.muted },
           "&.Mui-focusVisible": { outline: 2, outlineStyle: "solid", outlineColor: c.accent },
           "& .MuiListItemText-secondary": { color: c.mutedText },
+          ...(highlighted ? flashStyles(c, all.radius) : {}),
         }))}
       >
-        <ListItemText primary={title} secondary={secondary} slotProps={{ primary: { noWrap: true } }} />
+        <ListItemText
+          primary={
+            pinned ? (
+              <>
+                <PushPinIcon aria-hidden fontSize="inherit" sx={{ mr: 0.5, verticalAlign: "-2px", opacity: 0.7 }} />
+                {title}
+              </>
+            ) : (
+              title
+            )
+          }
+          secondary={secondary}
+          slotProps={{ primary: { noWrap: true } }}
+        />
       </ListItemButton>
       {hasMenu ? (
         <Menu id={menuId} anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+          {onPin ? (
+            <MenuItem
+              onClick={() => {
+                setAnchor(null);
+                onPin(id, !pinned);
+              }}
+            >
+              {pinned ? labels.unpin : labels.pin}
+            </MenuItem>
+          ) : null}
           {onRename ? (
             <MenuItem
               onClick={() => {

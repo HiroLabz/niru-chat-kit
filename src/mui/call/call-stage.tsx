@@ -37,6 +37,12 @@ export interface CallStageProps {
   onClose?: () => void;
   /** "Call again" on the ended screen, when starting a new call is not `session.retry()`. */
   onCallAgain?: () => void;
+  /**
+   * Fixed over the whole screen (inset 0, `100dvh`, padded by the device's safe areas so a notch or the
+   * home bar never covers a control), above the page. Use it when the stage should take the screen
+   * rather than fill a box you size yourself. Default false: the stage fills its parent.
+   */
+  overlay?: boolean;
   /** Take focus when mounted, so the Space and Escape shortcuts work at once. Default true. */
   autoFocus?: boolean;
   /** Replaces the default layout; compose `CallStage.Header`, `.Status`, `.Captions`, `.Preview` and `.Controls`. */
@@ -54,7 +60,7 @@ function DefaultLayout() {
     <>
       <CallStageHeader />
       <CallStagePreview />
-      <Box sx={{ position: "relative", zIndex: 1, flex: 1, minHeight: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3 }}>
+      <Box sx={{ position: "relative", zIndex: 1, flex: 1, minWidth: 0, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: { xs: 2, sm: 3 } }}>
         {problem ? (
           <CallProblemScreen kind={problem} />
         ) : (
@@ -82,7 +88,7 @@ function DefaultLayout() {
  * Escape minimises, End needs no confirmation. Compose your own with the parts, for example
  * `<CallStage session={s}><CallStage.Status /><CallStage.Controls /></CallStage>`.
  */
-function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, autoFocus = true, children, className, sx }: CallStageProps) {
+function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, overlay = false, autoFocus = true, children, className, sx }: CallStageProps) {
   const snapshot = useVoiceSession(session);
   const colors = useCallColors(overrides);
   const root = useRef<HTMLDivElement>(null);
@@ -124,8 +130,10 @@ function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = 
               position: "relative",
               display: "flex",
               flexDirection: "column",
+              boxSizing: "border-box",
               width: "100%",
               height: "100%",
+              minWidth: 0,
               minHeight: 0,
               overflow: "hidden",
               outline: "none",
@@ -133,6 +141,17 @@ function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = 
               bgcolor: colors.stage,
               backgroundImage: `radial-gradient(120% 60% at 50% 110%, ${alpha(colors.glow, 0.65)} 0%, ${alpha(colors.glow, 0.22)} 45%, transparent 78%)`,
               fontFamily: "inherit",
+            },
+            overlay && {
+              position: "fixed",
+              inset: 0,
+              width: "100%",
+              height: "100dvh",
+              zIndex: (theme) => theme.zIndex.modal,
+              pt: "env(safe-area-inset-top)",
+              pb: "env(safe-area-inset-bottom)",
+              pl: "env(safe-area-inset-left)",
+              pr: "env(safe-area-inset-right)",
             },
             ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
           ]}

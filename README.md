@@ -164,7 +164,7 @@ Ready-made blocks, from the same entry point:
 - `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`: the message box and suggestions.
 - `ChatEmptyState`, `ChatHistorySidebar`: the screen before the first message, and the list of past chats.
 - `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`: the parts of one reply.
-- `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: asking the person to approve, answer or edit.
+- `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: asking the person to approve, answer or edit. In `FullChat`, an agent's question is a `QuestionCard` in the thread (tap a suggested answer, press its number, or type in the normal message box); `InterruptPrompt` is the older bottom panel.
 
 ## Voice input
 
@@ -212,6 +212,28 @@ The search and grouping are also in the core, as `filterConversations` and `grou
 <ChatHistorySidebar items={rows} activeId={id} onSelect={open} onNew={create}
   searchable grouped onRename={rename} onDelete={remove} />
 ```
+
+## Pin, save and the Saved tab
+
+The kit only draws and reports. Your app keeps what is pinned and saved, and passes it back in.
+
+- Set `pinned: true` on a history item and handle `onPin(id, pinned)` (it adds Pin or Unpin to the row menu). Pinned chats move to a Pinned group above the date groups, in the order you list them.
+- Pass `saved` (a list of `SavedItem`) to add two tabs, Chats and Saved. A saved item is `{ id, kind: "conversation" | "message", conversationId, messageId?, title, text?, at }`. The Saved tab lists them newest first. Handle `onOpenSaved(item)` and `onUnsave(item)`. `tab` and `onTabChange` control the tab; leave them out and the sidebar keeps it.
+- `ConversationHeader` is a slim bar with the title, a Pin toggle and a Save toggle. Pass it to `FullChat` as `header`.
+- Give `ChatTurnActions` an `onSave(message)` and `isSaved(message)` and replies get a bookmark button after Copy.
+- To jump to something, pass `highlightMessageId` to `FullChat` or `Conversation` (the chat scrolls to it and tints it for about 2.5 seconds), and `highlightId` to the sidebar to flash a row. With reduced motion on, both show a still outline.
+
+```tsx
+<FullChat
+  stream={stream}
+  agent={agent}
+  header={<ConversationHeader title={title} pinned={pinned} onPinChange={setPinned} saved={chatSaved} onSaveChange={setChatSaved} />}
+  highlightMessageId={openedMessageId}
+  history={{ items, activeId, onSelect, onNew, onPin, saved, onOpenSaved, onUnsave, highlightId }}
+/>
+```
+
+The core has `splitPinned`, `filterSaved` and `sortSavedNewestFirst` if you build your own list.
 
 ## Deleting messages
 

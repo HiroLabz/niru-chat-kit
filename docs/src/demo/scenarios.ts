@@ -1,9 +1,9 @@
 import type { Scenario } from "./frames";
-import { delivery, error, essay, fallback, files, refund } from "./scripts-flow";
+import { delivery, error, essay, fallback, files, refund, stay } from "./scripts-flow";
 import { code, image, markdown, math, sources, tools, trip } from "./scripts-rich";
 
 /** In match order: the first scenario whose keyword appears in the question runs. */
-export const SCENARIOS: Scenario[] = [error, refund, delivery, essay, math, code, sources, trip, image, tools, markdown, files];
+export const SCENARIOS: Scenario[] = [error, refund, delivery, stay, essay, math, code, sources, trip, image, tools, markdown, files];
 
 export const STARTERS: string[] = [
   markdown.starter,
@@ -15,6 +15,7 @@ export const STARTERS: string[] = [
   sources.starter,
   refund.starter,
   delivery.starter,
+  stay.starter,
   error.starter,
   essay.starter,
   files.starter,

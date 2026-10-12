@@ -41,17 +41,17 @@ export function CallProblemScreen({ kind }: CallProblemScreenProps) {
   const again = kind === "ended" && onCallAgain ? onCallAgain : () => session.retry();
   const leave = onClose ?? (kind === "ended" ? undefined : () => session.end());
   return (
-    <Box data-testid="call-problem" data-problem={kind} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, textAlign: "center", px: 3, maxWidth: 420 }}>
+    <Box data-testid="call-problem" data-problem={kind} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, textAlign: "center", px: { xs: 2, sm: 3 }, maxWidth: 420, width: "100%", minWidth: 0, boxSizing: "border-box" }}>
       <Box aria-hidden sx={{ width: 72, height: 72, borderRadius: "50%", display: "grid", placeItems: "center", bgcolor: colors.control, color: colors.text, "& svg": { fontSize: 32 } }}>
         {icon}
       </Box>
-      <Typography role="alert" component="p" sx={{ fontSize: "1.6rem", fontWeight: 400 }}>
+      <Typography role="alert" component="p" sx={{ fontSize: { xs: "1.35rem", sm: "1.6rem" }, fontWeight: 400, overflowWrap: "anywhere" }}>
         {title}
       </Typography>
       <Typography variant="body2" sx={{ opacity: 0.75 }}>
         {body}
       </Typography>
-      <Box sx={{ display: "flex", gap: 1.5, mt: 1 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 1.5, mt: 1 }}>
         <Button variant="contained" color="inherit" onClick={again}>
           {action}
         </Button>

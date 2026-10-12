@@ -87,10 +87,10 @@ export function CallStageStatus({ mark, children }: CallStageStatusProps) {
       (mark ?? agent.avatar ?? <DefaultMark name={agent.name ?? ""} />)
     );
   return (
-    <Box data-testid="call-status" sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, textAlign: "center", px: 3 }}>
+    <Box data-testid="call-status" sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: { xs: 2, sm: 3 }, textAlign: "center", px: { xs: 2, sm: 3 }, maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }}>
       {centre}
       <Box role="status" aria-live="polite" aria-atomic>
-        <Typography component="p" data-testid="call-status-line" sx={{ fontSize: "clamp(1.6rem, 4.5vw, 2.4rem)", fontWeight: 400, lineHeight: 1.2 }}>
+        <Typography component="p" data-testid="call-status-line" sx={{ fontSize: "clamp(1.35rem, 4.5vw, 2.4rem)", fontWeight: 400, lineHeight: 1.2, overflowWrap: "anywhere" }}>
           {line}
         </Typography>
         {deviceError ? (

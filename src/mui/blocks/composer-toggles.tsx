@@ -4,10 +4,15 @@
 
 import { useId, useState, type ReactNode } from "react";
 import Chip from "@mui/material/Chip";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import { alpha } from "@mui/material/styles";
+import CheckIcon from "@mui/icons-material/Check";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { useChatKitStyles } from "../theme";
 
@@ -47,14 +52,20 @@ export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle
   );
 }
 
+/**
+ * The More menu. `toggles` are the composer's toggle chips when the row is too narrow for them:
+ * each becomes a checkable item (`role="menuitemcheckbox"`), above `children`.
+ */
 export function ComposerMoreMenu({
   children,
   label = "More",
   disabled,
+  toggles,
 }: {
-  children: ReactNode;
+  children?: ReactNode;
   label?: string;
   disabled?: boolean;
+  toggles?: ComposerToggle[];
 }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
@@ -76,6 +87,20 @@ export function ComposerMoreMenu({
         </span>
       </Tooltip>
       <Menu id={menuId} anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+        {toggles?.map((toggle) => (
+          <MenuItem
+            key={toggle.id}
+            role="menuitemcheckbox"
+            aria-checked={toggle.active}
+            disabled={toggle.disabled}
+            onClick={toggle.onToggle}
+          >
+            <ListItemIcon sx={{ color: "inherit" }}>{toggle.icon}</ListItemIcon>
+            <ListItemText>{toggle.label}</ListItemText>
+            {toggle.active ? <CheckIcon fontSize="small" sx={{ ml: 2 }} /> : null}
+          </MenuItem>
+        ))}
+        {toggles?.length && children ? <Divider component="li" /> : null}
         {children}
       </Menu>
     </>

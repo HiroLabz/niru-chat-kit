@@ -24,10 +24,26 @@ export const delivery: Scenario = {
   id: "question",
   starter: "Move my delivery date",
   keywords: ["delivery", "deliver", "reschedule", "move my"],
-  shows: "The reply pauses and asks you a question that you answer in your own words",
+  shows: "The reply pauses and asks an open question, which you answer in the message box",
   steps: () => [
     ...say("I can move it. I need one detail first."),
     pause({ kind: "ask_user", question: "Which date should the delivery move to?", options: [] }),
+  ],
+};
+
+export const stay: Scenario = {
+  id: "stay",
+  starter: "Tailor my Cebu plan to 3 days",
+  keywords: ["cebu", "tailor"],
+  shows: "The reply pauses with a question and tappable answers; tap one, press its number or type your own",
+  afterAnswer: (answer) => `Got it, ${answer}. Here is a 3-day plan that keeps the travel short from there.`,
+  steps: () => [
+    ...say("I can tailor it to 3 days. "),
+    pause({
+      kind: "clarify",
+      question: "Where will you be staying?",
+      options: ["Cebu City", "Mactan, near the airport", "Not decided yet"],
+    }),
   ],
 };
 
@@ -71,7 +87,7 @@ export const files: Scenario = {
 };
 
 export const FALLBACK_ANSWER =
-  "I am a scripted demo, so I can only answer a short list of things. Pick a suggestion, or type a word such as **markdown**, **code**, **maths**, **think**, **tools**, **sources**, **refund**, **delivery**, **error**, **essay** or **files**.";
+  "I am a scripted demo, so I can only answer a short list of things. Pick a suggestion, or type a word such as **markdown**, **code**, **maths**, **think**, **tools**, **sources**, **refund**, **delivery**, **cebu**, **error**, **essay** or **files**.";
 
 export const fallback: Scenario = {
   id: "fallback",

@@ -26,6 +26,8 @@ export type ReplayOptions = {
   onFrame?: (frame: AgentStreamEvent) => void;
   /** Questions answered up front, as if the conversation had happened earlier. */
   seed?: Array<{ question: string; at: number }>;
+  /** A fixed id, so the conversation and message ids are the same on every load. Default: random. */
+  id?: string;
 };
 
 export type ReplayTransport = ChatTransport<DemoParams> & {
@@ -81,7 +83,7 @@ function foldFrame(answer: Answer, frame: AgentStreamEvent): void {
 const isFrame = (step: ScriptStep): step is AgentStreamEvent => "event" in step;
 
 export function createReplayTransport(options: ReplayOptions = {}): ReplayTransport {
-  const id = Math.random().toString(36).slice(2, 8);
+  const id = options.id ?? Math.random().toString(36).slice(2, 8);
   const conversationId = `demo-${id}`;
   const threadId = `thread-${id}`;
   const exchanges: Exchange[] = [];
@@ -201,9 +203,14 @@ export function createReplayTransport(options: ReplayOptions = {}): ReplayTransp
     yield emit({ event: "done", data: {} });
   }
 
+  /** How the scenario that last ran answers once its question is answered. */
+  let pausedReply: ((answer: string) => string) | undefined;
+
   function start(turn: ChatTurn<DemoParams>, signal: AbortSignal): Promise<AsyncIterable<AgentStreamEvent>> {
     const ctx = context(turn);
-    const steps = pickScenario(turn.message, ctx.attachments).steps(ctx);
+    const scenario = pickScenario(turn.message, ctx.attachments);
+    pausedReply = scenario.afterAnswer;
+    const steps = scenario.steps(ctx);
     const failed = steps.some((step) => isFrame(step) && step.event === "error");
     const answer = failed ? null : emptyAnswer(Date.now());
     if (answer) place(turn.message, answer);
@@ -241,7 +248,7 @@ export function createReplayTransport(options: ReplayOptions = {}): ReplayTransp
     regenerate: (turn, signal) => start(turn, signal),
     resume: async (turn): Promise<InvokeResponse> => {
       await new Promise((resolve) => setTimeout(resolve, 600));
-      let message = `Done. I moved the delivery to ${turn.answer}.`;
+      let message = pausedReply ? pausedReply(turn.answer) : `Done. I moved the delivery to ${turn.answer}.`;
       if (turn.interruptKind === APPROVAL_INTERRUPT_KIND) {
         const edited = (turn.values?.edited_action as { args?: { amount?: number } } | undefined)?.args?.amount;
         message =

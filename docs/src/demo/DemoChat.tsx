@@ -35,6 +35,13 @@ type Props = {
   onStartCall?: () => void;
   /** The minimised call strip, drawn directly above the composer. */
   aboveComposer?: ReactNode;
+  /** Drawn above the conversation: the page puts the ConversationHeader here. */
+  header?: ReactNode;
+  /** A message to scroll to and highlight, for example after opening a saved message. */
+  highlightMessageId?: string;
+  /** Saves or unsaves a reply. With it, each reply gets a Save button. */
+  onSaveMessage?: (message: ChatMessage) => void;
+  isMessageSaved?: (message: ChatMessage) => boolean;
 };
 
 /** Extras the demo draws under a turn: the raw call of a tool (Tool with input and output) and an image from base64. */
@@ -65,7 +72,7 @@ const copyText = async (text: string) => {
  * One demo conversation: `useChatStream` over the conversation's replay transport, drawn by
  * `FullChat`. Mount it with `key={conversation.id}` so switching conversations starts clean.
  */
-export function DemoChat({ conversation, history, starters = STARTERS, onFirstMessage, greeting, callCards, onCallAgain, onStartCall, aboveComposer }: Props) {
+export function DemoChat({ conversation, history, starters = STARTERS, onFirstMessage, greeting, callCards, onCallAgain, onStartCall, aboveComposer, header, highlightMessageId, onSaveMessage, isMessageSaved }: Props) {
   const { transport } = conversation;
   const reopened = useMemo(() => transport.snapshot(), [transport]);
   const [files, setFiles] = useState<ComposerAttachment[]>([]);
@@ -142,6 +149,7 @@ export function DemoChat({ conversation, history, starters = STARTERS, onFirstMe
         onCopy: copyText,
         onFeedback: () => new Promise<void>((resolve) => setTimeout(resolve, 250)),
         onDelete: (message: ChatMessage) => setDeleted((current) => new Set(current).add(message.id)),
+        ...(onSaveMessage ? { onSave: onSaveMessage, isSaved: isMessageSaved } : {}),
       }
     : null;
 
@@ -149,10 +157,13 @@ export function DemoChat({ conversation, history, starters = STARTERS, onFirstMe
     <FullChat
       stream={{ ...stream, messages: shown, send, turnActions }}
       agent={{ name: "Demo agent", initial: "D" }}
+      decideAnswer="Use your best judgement"
       renderAvatar={(size) => <AgentAvatar avatar={{ kind: "preset", preset_id: "hiro-02" }} name="Demo agent" size={size} />}
       greeting={greeting ?? "Hi, I am a scripted demo agent. Pick a suggestion below and watch what the kit does."}
       starters={starters.length ? starters : NO_STARTERS}
       history={history}
+      header={header}
+      highlightMessageId={highlightMessageId}
       attachments={files}
       onAttach={onAttach}
       onRemoveAttachment={(id) => setFiles((current) => current.filter((file) => file.id !== id))}

@@ -37,7 +37,7 @@ export function Chat() {
 - `ChatTransportError`: a failed transport call; `message` is shown beside Retry, with `code` and `status`.
 - `ChatMessage`: one turn (`id`, `role`, `text`, `pending?`, `citations?`, `steps?`, `parts?`, `serverId?`, `siblingIds?`, `files?` ...).
 - `ChatRole`: `"user" | "assistant" | "system"`.
-- `ChatTurnActions`: the per-turn controls a transcript offers: `disabled`, `onRegenerate`, `onEdit`, `canEdit`, `onSwitchBranch`, `onCopy`, `renderCopy`, `onFeedback`, `renderExtraActions`, `onDelete(message)`. A control shows only when its handler is given. Example: `const actions: ChatTurnActions = { disabled: false, onDelete: (m) => remove(m.serverId) };`
+- `ChatTurnActions`: the per-turn controls a transcript offers: `disabled`, `onRegenerate`, `onEdit`, `canEdit`, `onSwitchBranch`, `onCopy`, `renderCopy`, `onFeedback`, `renderExtraActions`, `onDelete(message)`, `onSave(message)`, `isSaved(message)` (a bookmark toggle after Copy on assistant replies). A control shows only when its handler is given. Example: `const actions: ChatTurnActions = { disabled: false, onDelete: (m) => remove(m.serverId) };`
 - `FeedbackRating`: `"up" | "down"`.
 - `MessageStatus`: `"completed" | "stopped"`.
 - `Citation`, `CitationCheck`: a source a reply cites, and the grounding check on it.
@@ -145,9 +145,9 @@ export function Chat() {
 
 ## Whole chat
 
-- `FullChat`: a whole chat on one `useChatStream` result. Props: `stream`, `agent`, `greeting`, `starters`, `placeholder`, `history`, `attachments`, `onAttach`, `columnMaxWidth`, `emptyState`, `disabled`, `errorAction`, `look`, `onStartCall` (call button next to Send), `callLabel`, `callDisabled`, `aboveComposer` (a node directly above the composer or interrupt card, for example a `CallStrip`). Example: `<FullChat stream={stream} agent={{ name: "Niru", initial: "N" }} starters={["What can you do?"]} />`
+- `FullChat`: a whole chat on one `useChatStream` result. Props: `stream`, `agent`, `greeting`, `starters`, `placeholder`, `history`, `attachments`, `onAttach`, `columnMaxWidth`, `emptyState`, `header` (a node above the conversation), `highlightMessageId`, `disabled`, `errorAction`, `look`, `onStartCall` (call button next to Send), `callLabel`, `callDisabled`, `aboveComposer` (a node directly above the composer or interrupt card, for example a `CallStrip`), `decideAnswer` (adds a "Let the agent decide" link to a question card that answers with this phrase), `decideLabel`, `questionLabels`. A pending question (any interrupt that is not an approval) shows as a `QuestionCard` in the thread, the composer stays and answers it, and an answered question folds into one line. Example: `<FullChat stream={stream} agent={{ name: "Niru", initial: "N" }} starters={["What can you do?"]} />`
 - `FullChatProps`, `FullChatStream`: its props and the slice of the hook it reads.
-- `Conversation`: the auto-following `role="log"` transcript. Props: `messages`, `typing`, `turnActions`, `onStop`, `agentAvatar`, `liveAvatar`, `emptyState`, `footer`, `columnMaxWidth`, `renderMessage`, `renderExtras`. Example: `<Conversation messages={messages} typing={status === "connecting"} turnActions={turnActions} />`
+- `Conversation`: the auto-following `role="log"` transcript. Props: `messages`, `typing`, `turnActions`, `onStop`, `agentAvatar`, `liveAvatar`, `emptyState`, `footer`, `columnMaxWidth`, `renderMessage`, `renderExtras`, `highlightMessageId` (scrolls that turn into view inside the chat and tints it for about 2.5 seconds; a still outline under reduced motion; turns carry `data-message-id`), `question` (`{ interrupt, onAnswer, onOther?, decideAnswer?, decideLabel?, pending?, labels? }`: a pending question drawn as a card after the last turn), `foldAnswers` (a user turn with `answersQuestion` draws as one line), `onChangeAnswer`. Example: `<Conversation messages={messages} typing={status === "connecting"} turnActions={turnActions} />`
 - `ConversationProps`, `ConversationTurn`, `ConversationTurnProps`: one memoised turn (user bubble, or avatar with timeline, answer, files, notes and actions).
 - `columnPadding(maxWidth)`: side padding that centres content in a column.
 - `TypingDots`: the typing dots alone.
@@ -155,12 +155,14 @@ export function Chat() {
 
 ## History sidebar
 
-- `ChatHistorySidebar`: the conversation list with identity, New chat and rows. Props: `items`, `activeId`, `onSelect`, `onNew`, `identity`, `hasMore`, `loading`, `onLoadMore`, `collapseBelow`, plus optional `searchable` (search box filtering title and preview), `grouped` (Today, Yesterday, Previous 7 days, Previous 30 days, Older by the item's `at`), `onRename(id, title)` and `onDelete(id)` (a per-row menu; delete asks first), `labels` (override any text) and `now` (for tests). Example: `<ChatHistorySidebar items={rows} activeId={id} onSelect={open} onNew={create} searchable grouped onRename={rename} onDelete={remove} />`
-- `ChatHistorySidebarProps`, `ChatHistoryItem` (`id`, `title?`, `preview?`, `at?`), `ChatHistoryIdentity`, `ChatHistoryLabels`, `DEFAULT_HISTORY_LABELS`: types and default texts.
+- `ChatHistorySidebar`: the conversation list with identity, New chat and rows. Props: `items`, `activeId`, `onSelect`, `onNew`, `identity`, `hasMore`, `loading`, `onLoadMore`, `collapseBelow`, plus optional `searchable` (search box filtering title and preview), `grouped` (Today, Yesterday, Previous 7 days, Previous 30 days, Older by the item's `at`), `onRename(id, title)` and `onDelete(id)` (a per-row menu; delete asks first), `labels` (override any text), `now` (for tests), `onPin(id, pinned)` (Pin / Unpin in the row menu; items with `pinned: true` go in a Pinned group first), `saved` (a `SavedItem[]`; adds Chats and Saved tabs, newest first), `onOpenSaved(item)`, `onUnsave(item)`, `tab` and `onTabChange` (controlled tab; uncontrolled by default) and `highlightId` (flashes that Chats row when it changes). Example: `<ChatHistorySidebar items={rows} activeId={id} onSelect={open} onNew={create} searchable grouped onRename={rename} onDelete={remove} />`
+- `ChatHistorySidebarProps`, `ChatHistoryItem` (`id`, `title?`, `preview?`, `at?`, `pinned?`), `ChatHistoryTab` (`"chats" | "saved"`), `ChatHistoryIdentity`, `ChatHistoryLabels`, `DEFAULT_HISTORY_LABELS`: types and default texts.
+- `SavedItem` (`id`, `kind: "conversation" | "message"`, `conversationId`, `messageId?`, `title`, `text?`, `at`), `SavedKind`: what the Saved tab lists. Core helpers: `splitPinned`, `filterSaved`, `sortSavedNewestFirst`. `SavedList` draws the rows of the Saved tab.
+- `ConversationHeader`: a compact bar above a chat. Props: `title`, `pinned`, `onPinChange(next)`, `saved`, `onSaveChange(next)` (bookmark, `aria-pressed`, tooltip "Save chat" / "Saved"), `actions`, `labels`. Pass it to `FullChat` as `header`. Example: `<ConversationHeader title="Refunds" saved={saved} onSaveChange={setSaved} />`. Types: `ConversationHeaderProps`, `ConversationHeaderLabels`, `DEFAULT_HEADER_LABELS`.
 
 ## Composer
 
-- `Composer`: the prompt box. Required: `value`, `onChange`, `onSubmit`. Optional: `onStop`, `busy`, `disabled`, `placeholder`, `settings`, `attachments`, `onAttach`, `onRemoveAttachment`, `accept`, `suggestions`, `trailing`, `endActions`, `inputRef`, plus `voice` (mic toggle that dictates into the box where the browser supports it), `voiceLang`, `toggles` (on/off chips with `aria-pressed`) and `moreActions` (menu items behind a "More" button), `moreLabel`, `onStartCall` (round call button before Send), `callLabel` (default "Start a call"), `callDisabled`. Example: `<Composer value={draft} onChange={setDraft} onSubmit={send} voice toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]} />`
+- `Composer`: the prompt box. Required: `value`, `onChange`, `onSubmit`. Optional: `onStop`, `busy`, `disabled`, `placeholder`, `settings`, `attachments`, `onAttach`, `onRemoveAttachment`, `accept`, `suggestions`, `trailing`, `endActions`, `inputRef`, plus `voice` (mic toggle that dictates into the box where the browser supports it), `voiceLang`, `toggles` (on/off chips with `aria-pressed`) and `moreActions` (menu items behind a "More" button), `moreLabel`, `onStartCall` (round call button before Send), `callLabel` (default "Start a call"), `callDisabled`, `answering` (`{ question }`: shows an "Answering: ..." chip and the placeholder "Type your answer"), `answeringLabel`, `answeringPlaceholder`. Example: `<Composer value={draft} onChange={setDraft} onSubmit={send} voice toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]} />`
 - `ComposerProps`, `ComposerAttachment` (`id`, `name`, `kind?`, `previewUrl?`), `ComposerToggle` (`id`, `label`, `icon`, `active`, `onToggle`, `disabled?`): types.
 - `ComposerPills`, `SuggestionPills`, `FOLLOW_UPS_LABEL`: follow-up or starter pills above the box.
 - `ComposerSuggestionsList`, `useComposerSuggestions`, `ComposerSuggestionsController`, `filterSuggestions`: autocomplete candidates above the field.
@@ -171,7 +173,7 @@ export function Chat() {
 
 ## A turn
 
-- `TurnActions`: the controls under a settled turn: copy, regenerate, edit, version arrows, rating and, when `actions.onDelete` is given, Delete behind a confirm. Props: `message`, `actions` (a `ChatTurnActions`), `onStartEdit`. Example: `<TurnActions message={m} actions={{ disabled: false, onDelete: remove }} onStartEdit={edit} />`
+- `TurnActions`: the controls under a settled turn: copy, regenerate, edit, version arrows, rating and, when `actions.onDelete` is given, Delete behind a confirm, and when `actions.onSave` is given, a Save bookmark after Copy. Props: `message`, `actions` (a `ChatTurnActions`), `onStartEdit`. Example: `<TurnActions message={m} actions={{ disabled: false, onDelete: remove }} onStartEdit={edit} />`
 - `TurnCopyButton`: copies a reply's markdown and says "Copied".
 - `TurnTimeline`: the activity timeline of a turn ("Worked for 7s"). `TurnSteps`, `summarizeTurnSteps`, `TurnStepsSummary`: a turn's steps inside `Reasoning`.
 - `MessageNotes`: notes on how an answer ended (stopped, not grounded).
@@ -183,8 +185,9 @@ export function Chat() {
 ## Interrupts
 
 - `InterruptPrompt`: the pause a run waits on: a question or an approval. Props: `interrupt`, `onAnswer`, `pending`.
+- `QuestionCard`: an agent's question as a card in the thread. Props: `question`, `options` (numbered rows, keys 1 to 9 pick them), `onAnswer`, `onOther` (adds a "Something else" row), `decideAnswer` and `decideLabel` ("Let the agent decide"), `answered` (folds into one line), `onChange` (a Change link), `showQuestion` (false when the reply already ends with it), `pending`, `keyboard`, `labels`. Core adds `isQuestionInterrupt`, `replyEndsWithQuestion` and `ChatMessage.answersQuestion`.
 - `ApprovalCard`: waiting calls, the resume form and Approve, Edit, Deny. Props: `interrupt`, `onAnswer`, `pending`, `disabledAnswers`.
-- `ApprovalFormFields`: the controls for one resume form. `QuestionCard`: the free-text answer box. `InterruptEditForm`, `EditableAction`: edit a waiting call before approving.
+- `ApprovalFormFields`: the controls for one resume form. `InterruptEditForm`, `EditableAction`: edit a waiting call before approving.
 
 ## Call mode
 

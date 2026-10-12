@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { FullChat, type FullChatStream } from "./full-chat";
 
 function stream(overrides: Partial<FullChatStream> = {}): FullChatStream {
@@ -31,6 +31,14 @@ describe("FullChat", () => {
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(current.send).toHaveBeenCalledWith("What can you do?");
     expect(box).toHaveValue("");
+  });
+
+  it("sends a starter at once when sendStarters is on", () => {
+    const current = stream();
+    render(<FullChat stream={current} agent={agent} starters={["What can you do?"]} sendStarters />);
+    fireEvent.click(screen.getByRole("button", { name: "What can you do?" }));
+    expect(current.send).toHaveBeenCalledWith("What can you do?");
+    expect(screen.getByRole("textbox")).toHaveValue("");
   });
 
   it("sends a follow-up on click", () => {
@@ -71,17 +79,93 @@ describe("FullChat", () => {
     expect(screen.getByRole("link", { name: "Top up" })).toBeInTheDocument();
   });
 
-  it("swaps the composer for the interrupt card while the run waits on an answer", () => {
+  it("asks a question as a card in the thread and keeps the composer", () => {
+    const current = stream({
+      status: "needs_input",
+      messages: [{ id: "a1", role: "assistant", text: "I need one detail first." }],
+      interrupt: { kind: "ask_user", question: "Which date?" },
+    });
+    render(<FullChat stream={current} agent={agent} />);
+    expect(screen.getByText("One detail before I continue")).toBeInTheDocument();
+    expect(screen.getByText("Which date?")).toBeInTheDocument();
+    expect(screen.getByText("Answer in the message box below")).toBeInTheDocument();
+    expect(screen.getByText("Answering: Which date?")).toBeInTheDocument();
+    expect(screen.queryByText("Waiting for your answer")).not.toBeInTheDocument();
+    expect(screen.getByRole("textbox")).toHaveFocus();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Friday" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(current.resume).toHaveBeenCalledWith("Friday");
+    expect(current.send).not.toHaveBeenCalled();
+  });
+
+  it("answers with a tapped suggestion, and 'Something else' focuses the composer", () => {
+    vi.useFakeTimers();
+    try {
+      const current = stream({
+        status: "needs_input",
+        messages: [{ id: "a1", role: "assistant", text: "Hold on." }],
+        interrupt: { kind: "clarify", question: "Where?", options: ["Cebu City", "Mactan"] },
+      });
+      render(<FullChat stream={current} agent={agent} decideAnswer="Use your judgement" />);
+      expect(screen.getByRole("textbox")).not.toHaveFocus();
+      fireEvent.click(screen.getByRole("button", { name: /Something else/ }));
+      expect(screen.getByRole("textbox")).toHaveFocus();
+      fireEvent.click(screen.getByRole("button", { name: /Mactan/ }));
+      act(() => void vi.advanceTimersByTime(400));
+      expect(current.resume).toHaveBeenCalledWith("Mactan");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("answers with the decide phrase when the app supplies one", () => {
+    const current = stream({
+      status: "needs_input",
+      interrupt: { kind: "clarify", question: "Where?", options: ["Cebu City"] },
+    });
+    render(<FullChat stream={current} agent={agent} decideAnswer="Use your judgement" />);
+    fireEvent.click(screen.getByRole("button", { name: "Let the agent decide" }));
+    expect(current.resume).toHaveBeenCalledWith("Use your judgement");
+  });
+
+  it("resumes once for one question, however many answers arrive", () => {
     const current = stream({
       status: "needs_input",
       interrupt: { kind: "ask_user", question: "Which date?" },
     });
     render(<FullChat stream={current} agent={agent} />);
-    expect(screen.getByText("Which date?")).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Friday" } });
+    const send = screen.getByRole("button", { name: "Send" });
+    act(() => {
+      fireEvent.click(send);
+      fireEvent.click(send);
+      fireEvent.keyDown(screen.getByRole("textbox"), { key: "Enter" });
+    });
+    expect(current.resume).toHaveBeenCalledTimes(1);
+  });
+
+  it("folds the answered question in the thread", () => {
+    const current = stream({
+      status: "streaming",
+      messages: [
+        { id: "a1", role: "assistant", text: "Hold on." },
+        { id: "u2", role: "user", text: "Mactan", answersQuestion: { question: "Where?" } },
+      ],
+    });
+    render(<FullChat stream={current} agent={agent} />);
+    expect(screen.getByText("Mactan").tagName).toBe("B");
+    expect(screen.queryByRole("button", { name: "Change" })).not.toBeInTheDocument();
+  });
+
+  it("keeps the approval card and panel exactly as they were", () => {
+    const current = stream({
+      status: "needs_input",
+      interrupt: { kind: "tool_approval", question: "Approve the refund?", options: [], actions: [], can_edit: false, fields: [] },
+    });
+    render(<FullChat stream={current} agent={agent} />);
+    expect(screen.getByText("Approval needed")).toBeInTheDocument();
+    expect(screen.queryByText("One detail before I continue")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByPlaceholderText("Your answer"), { target: { value: "Friday" } });
-    fireEvent.click(screen.getByRole("button", { name: "Answer" }));
-    expect(current.resume).toHaveBeenCalledWith("Friday");
   });
 
   it("shows Stop and hides the pills while a run is streaming", () => {
@@ -156,7 +240,7 @@ describe("FullChat", () => {
   it("renders aboveComposer above the interrupt card too", () => {
     render(
       <FullChat
-        stream={stream({ status: "needs_input", interrupt: { kind: "ask_user", question: "Which date?" } })}
+        stream={stream({ status: "needs_input", interrupt: { kind: "tool_approval", question: "Which date?", options: [] } })}
         agent={agent}
         aboveComposer={<div data-testid="strip" />}
       />,

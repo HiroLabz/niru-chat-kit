@@ -64,7 +64,7 @@ export function CallStrip({ session, agentName, userName, labels, colors: overri
         data-testid="call-strip"
         data-phase={phase}
         sx={[
-          { display: "flex", alignItems: "center", gap: 1, p: 0.75, pl: 1.5, borderRadius: 999, bgcolor: colors.stage, color: colors.text, border: `1px solid ${colors.border}` },
+          { display: "flex", alignItems: "center", gap: 1, p: 0.75, pl: 1.5, minWidth: 0, maxWidth: "100%", boxSizing: "border-box", overflow: "hidden", borderRadius: 999, bgcolor: colors.stage, color: colors.text, border: `1px solid ${colors.border}` },
           ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
         ]}
       >
@@ -82,17 +82,17 @@ export function CallStrip({ session, agentName, userName, labels, colors: overri
           ) : (
             <Box aria-hidden sx={{ width: 10, height: 10, flex: "0 0 auto", borderRadius: "50%", bgcolor: colors.mutedText }} />
           )}
-          <Box sx={{ minWidth: 0, textAlign: "left" }}>
+          <Box sx={{ minWidth: 0, flex: "0 1 auto", textAlign: "left" }}>
             <Typography role="status" aria-live="polite" component="span" noWrap sx={{ display: "block", fontSize: 14, fontWeight: 600 }}>
               {t(statusKeyOf(snapshot))}
             </Typography>
-            <Typography component="span" data-testid="call-strip-time" sx={{ display: "block", fontSize: 12, color: colors.mutedText }}>
+            <Typography component="span" noWrap data-testid="call-strip-time" sx={{ display: "block", fontSize: 12, color: colors.mutedText }}>
               {formatCallDuration(elapsed)}
             </Typography>
           </Box>
           {cameraOn ? <VideocamIcon data-testid="call-strip-camera" aria-label={t("cameraOff")} sx={{ fontSize: 18 }} /> : null}
           {screenOn ? <PresentToAllIcon data-testid="call-strip-screen" aria-label={t("sharing")} sx={{ fontSize: 18 }} /> : null}
-          {onExpand ? <OpenInFullIcon aria-hidden sx={{ ml: "auto", fontSize: 16, color: colors.mutedText }} /> : null}
+          {onExpand ? <OpenInFullIcon aria-hidden sx={{ ml: "auto", flex: "0 0 auto", fontSize: 16, color: colors.mutedText, "@media (max-width: 359.95px)": { display: "none" } }} /> : null}
         </ButtonBase>
         {capabilities.mute && live ? (
           <CallControlButton

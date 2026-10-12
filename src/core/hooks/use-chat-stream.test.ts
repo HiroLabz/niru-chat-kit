@@ -141,6 +141,34 @@ describe("useChatStream", () => {
     expect(result.current.messages.at(-1)?.text).toBe("Done");
   });
 
+  it("keeps the question with the answer turn so the thread can fold them", async () => {
+    const interrupt = { kind: "clarify", question: "Where will you stay?", options: ["Cebu City", "Mactan"] };
+    const resume = vi.fn(async () => ({ status: "completed", message: "Done", conversation_id: "c1" }) as InvokeResponse);
+    const transport = transportOf({
+      send: vi.fn(async () => frames([STARTED, { event: "needs_input", data: { question: interrupt.question, interrupt } }])),
+      resume,
+    });
+    const { result } = renderHook(() => useChatStream(transport));
+    await act(async () => result.current.send("Plan it"));
+    await act(async () => result.current.resume("Mactan"));
+    const answer = result.current.messages.find((m) => m.role === "user" && m.text === "Mactan");
+    expect(answer?.answersQuestion).toEqual({ question: "Where will you stay?", options: ["Cebu City", "Mactan"] });
+    expect(result.current.messages.find((m) => m.text === "Plan it")?.answersQuestion).toBeUndefined();
+  });
+
+  it("does not mark an approval answer as a question", async () => {
+    const interrupt = { kind: "tool_approval", question: "Approve?", options: [] };
+    const resume = vi.fn(async () => ({ status: "completed", message: "Done", conversation_id: "c1" }) as InvokeResponse);
+    const transport = transportOf({
+      send: vi.fn(async () => frames([STARTED, { event: "needs_input", data: { question: interrupt.question, interrupt } }])),
+      resume,
+    });
+    const { result } = renderHook(() => useChatStream(transport));
+    await act(async () => result.current.send("Refund"));
+    await act(async () => result.current.resume("approve"));
+    expect(result.current.messages.find((m) => m.text === "Approved")?.answersQuestion).toBeUndefined();
+  });
+
   it("stop asks the transport and keeps the stream open when it accepts", async () => {
     let release: () => void = () => undefined;
     const gate = new Promise<void>((resolve) => (release = resolve));

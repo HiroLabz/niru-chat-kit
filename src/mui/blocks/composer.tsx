@@ -33,12 +33,9 @@ import Box from "@mui/material/Box";
 import type { BoxProps } from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { alpha, darken } from "@mui/material/styles";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
+import { alpha } from "@mui/material/styles";
 import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
-import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import { PromptInput } from "../primitives/prompt-input";
 import { useChatKitStyles } from "../theme";
@@ -48,6 +45,8 @@ import { ComposerAttachmentList, type ComposerAttachment } from "./composer-atta
 import { ComposerCallButton } from "./composer-call";
 import { ComposerMicButton, ComposerVoiceStatus, useComposerVoice } from "./composer-voice";
 import { ComposerMoreMenu, ComposerToggles, type ComposerToggle } from "./composer-toggles";
+import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
+import { useNarrowBox } from "./use-narrow-box";
 
 export type { ComposerAttachment } from "./composer-attachments";
 export type { ComposerToggle } from "./composer-toggles";
@@ -67,6 +66,9 @@ const COMPOSER_RADIUS_SCALE = 1.5;
  * floating label and a select's chevron at the edge.
  */
 const SETTINGS_CLIP_INSET = 1.25;
+
+/** Below this width (px) of the composer itself, the toggles move into the More menu so Send always fits. */
+const TOGGLES_INTO_MORE_BELOW = 460;
 
 const NO_SUGGESTIONS: string[] = [];
 
@@ -119,6 +121,15 @@ export type ComposerProps = {
   callLabel?: string;
   /** Greys the call button only. */
   callDisabled?: boolean;
+  /**
+   * Set while the agent waits on an answer: a chip above the text says "Answering: <question>"
+   * and the placeholder becomes "Type your answer". The box, voice and attachments work as usual.
+   */
+  answering?: { question: string };
+  /** The chip's lead-in; default "Answering:". */
+  answeringLabel?: string;
+  /** The placeholder while `answering`; default "Type your answer". */
+  answeringPlaceholder?: string;
 };
 
 export function Composer({
@@ -154,12 +165,17 @@ export function Composer({
   onStartCall,
   callLabel,
   callDisabled,
+  answering,
+  answeringLabel = "Answering:",
+  answeringPlaceholder = "Type your answer",
 }: ComposerProps) {
   const { scheme } = useChatKitStyles();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsId = useId();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLDivElement | null>(null);
+  const narrow = useNarrowBox(composerRootRef, TOGGLES_INTO_MORE_BELOW);
+  const foldToggles = narrow && Boolean(toggles?.length);
   const canSend = value.trim().length > 0 && !disabled && !busy;
   const voice = useComposerVoice({ enabled: voiceEnabled, value, onChange, lang: voiceLang });
   const stopVoice = voice.stop;
@@ -250,6 +266,7 @@ export function Composer({
           },
         }))}
       >
+        {answering ? <ComposerAnsweringChip question={answering.question} label={answeringLabel} /> : null}
         {attachmentNotice ? (
           <Typography variant="body2" role="status" sx={scheme((c) => ({ mb: 1, color: c.mutedText }))}>
             {attachmentNotice}
@@ -280,7 +297,7 @@ export function Composer({
         </Collapse>
 
         <PromptInput.Textarea
-          placeholder={placeholder}
+          placeholder={answering ? answeringPlaceholder : placeholder}
           autoFocus={autoFocus}
           onKeyDown={composerSuggestions.handleKeyDown}
           sx={{ px: 0.5, fontSize: 15, lineHeight: 1.55, color: "inherit", fontFamily: "inherit" }}
@@ -300,7 +317,7 @@ export function Composer({
 
         <ComposerVoiceStatus voice={voice} />
 
-        <PromptInput.Actions sx={{ mt: 0.75 }} slotProps={{ root: { "data-chat": "composer-bar" } as never }}>
+        <PromptInput.Actions sx={{ mt: 0.75, flexWrap: "wrap", minWidth: 0 }} slotProps={{ root: { "data-chat": "composer-bar" } as never }}>
           {settings ? (
             <PromptInput.Action tooltip={settingsLabel}>
               <IconButton
@@ -331,10 +348,10 @@ export function Composer({
 
           <ComposerMicButton voice={voice} disabled={disabled} />
 
-          {toggles?.length ? <ComposerToggles toggles={toggles} disabled={disabled} /> : null}
+          {toggles?.length && !foldToggles ? <ComposerToggles toggles={toggles} disabled={disabled} /> : null}
 
-          {moreActions ? (
-            <ComposerMoreMenu label={moreLabel} disabled={disabled}>
+          {moreActions || foldToggles ? (
+            <ComposerMoreMenu label={moreLabel} disabled={disabled} toggles={foldToggles ? toggles : undefined}>
               {moreActions}
             </ComposerMoreMenu>
           ) : null}
@@ -347,36 +364,13 @@ export function Composer({
 
           <ComposerCallButton onStartCall={onStartCall} label={callLabel} disabled={disabled || callDisabled} />
 
-          {busy && onStop ? (
-            <Tooltip title="Stop">
-              <IconButton
-                size="small"
-                aria-label="Stop"
-                onClick={onStop}
-                sx={scheme((c) => ({ color: c.error }))}
-              >
-                <StopRoundedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <PromptInput.Action tooltip={canSend ? "Send" : attachments.length ? "Add a message to send your files" : "Write a message to send"}>
-              <IconButton
-                size="small"
-                aria-label="Send"
-                data-chat="send"
-                disabled={!canSend}
-                onClick={submit}
-                sx={scheme((c) => ({
-                  bgcolor: c.accent,
-                  color: c.accentContrast,
-                  "&:hover": { bgcolor: darken(c.accent, 0.15) },
-                  "&.Mui-disabled": { bgcolor: c.muted, color: c.mutedText },
-                }))}
-              >
-                <ArrowUpwardIcon fontSize="small" />
-              </IconButton>
-            </PromptInput.Action>
-          )}
+          <ComposerSendButton
+            busy={busy}
+            onStop={onStop}
+            canSend={canSend}
+            onSend={submit}
+            tooltip={canSend ? "Send" : attachments.length ? "Add a message to send your files" : "Write a message to send"}
+          />
         </PromptInput.Actions>
 
         {onAttach ? (

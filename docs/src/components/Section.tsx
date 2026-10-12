@@ -37,7 +37,7 @@ export function C({ children }: { children: ReactNode }) {
   return (
     <Box
       component="code"
-      sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: "0.88em", bgcolor: "action.hover", px: 0.6, py: 0.15, borderRadius: 0.75 }}
+      sx={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", fontSize: "0.88em", overflowWrap: "anywhere", bgcolor: "action.hover", px: 0.6, py: 0.15, borderRadius: 0.75 }}
     >
       {children}
     </Box>

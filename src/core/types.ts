@@ -140,6 +140,13 @@ export type ChatMessage = {
   files?: GeneratedFileRef[];
   /** When the turn stopped working (ms epoch); with `at` it gives "Worked for …". */
   settledAt?: number;
+  /**
+   * Set on the user turn that answered an agent's question: the question it answered and
+   * the suggested answers it offered. `text` is the answer. Kept in the stream state so
+   * the thread can show "question, answer" as one line until the conversation reloads
+   * from history (which does not carry it).
+   */
+  answersQuestion?: { question: string; options?: string[] };
   /** A settled turn whose duration nobody measured (loaded from history): its timeline header names no time. */
   timingUnknown?: boolean;
 };
@@ -166,6 +173,10 @@ export type ChatTurnActions = {
   renderExtraActions?: (message: ChatMessage) => ReactNode;
   /** Deletes a message. Absent: no Delete control. When given, the kit asks for a confirm before calling it, on user and assistant turns. */
   onDelete?: (message: ChatMessage) => void;
+  /** Saves a settled assistant reply; the kit draws a bookmark toggle after Copy. Absent: no Save control. The app keeps what was saved. */
+  onSave?: (message: ChatMessage) => void;
+  /** Whether a reply is already saved, so the bookmark shows as pressed. Pressing it again calls `onSave`, so the app decides to save or unsave. */
+  isSaved?: (message: ChatMessage) => boolean;
 };
 
 export type AgentStreamStatus =

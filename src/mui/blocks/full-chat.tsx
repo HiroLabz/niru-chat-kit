@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import type { BoxProps } from "@mui/material/Box";
 import { useSuggestionFill } from "../../core/hooks/use-suggestion-fill";
+import { isQuestionInterrupt } from "../../core/question";
 import type { AgentStreamStatus, ChatMessage, ChatTurnActions, Interrupt } from "../../core/types";
 import { FileUpload } from "../primitives/file-upload";
 import { SystemMessage } from "../primitives/system-message";
@@ -16,6 +17,7 @@ import { Composer, type ComposerAttachment } from "./composer";
 import type { ComposerToggle } from "./composer-toggles";
 import { ComposerPills } from "./composer-pills";
 import { columnPadding, Conversation } from "./conversation";
+import type { QuestionCardLabels } from "./question-card";
 import type { FileDownloader } from "./file-chip";
 import { InterruptPrompt } from "./interrupt-prompt";
 
@@ -42,7 +44,13 @@ export type FullChatProps = {
   greeting?: string;
   /** Starter prompts before the first message; picking one fills the box. */
   starters?: string[];
+  /** Picking a starter sends it at once instead of filling the box. Default: false (fills). */
+  sendStarters?: boolean;
   placeholder?: string;
+  /** Drawn above the conversation, for example a `ConversationHeader`. Absent: nothing. */
+  header?: ReactNode;
+  /** Brings a message into view and highlights it; see `Conversation`'s `highlightMessageId`. */
+  highlightMessageId?: string;
   /** Adds the conversation list beside the chat (above it on a narrow screen). */
   history?: ChatHistorySidebarProps;
   attachments?: ComposerAttachment[];
@@ -89,6 +97,15 @@ export type FullChatProps = {
   callDisabled?: boolean;
   /** Rendered directly above the composer (or the interrupt card), inside the composer column, for example a `CallStrip`. */
   aboveComposer?: ReactNode;
+  /**
+   * A phrase that answers a question for the person ("Let the agent decide" link on the question card),
+   * for example "Use your best judgement". Omitted: no such link.
+   */
+  decideAnswer?: string;
+  /** The link's text; default "Let the agent decide". */
+  decideLabel?: string;
+  /** Replaces words on the question card; see `QuestionCardLabels`. */
+  questionLabels?: Partial<QuestionCardLabels>;
 };
 
 /**
@@ -102,7 +119,10 @@ export function FullChat({
   agent,
   greeting = "How can I help?",
   starters = [],
+  sendStarters = false,
   placeholder,
+  header,
+  highlightMessageId,
   history,
   attachments,
   onAttach,
@@ -132,16 +152,37 @@ export function FullChat({
   callLabel,
   callDisabled,
   aboveComposer,
+  decideAnswer,
+  decideLabel,
+  questionLabels,
 }: FullChatProps) {
   const { scheme } = useChatKitStyles();
   const [draft, setDraft] = useState("");
   const { inputRef, fill } = useSuggestionFill(setDraft);
   const busy = stream.status === "connecting" || stream.status === "streaming";
 
+  /** A question the agent asked in words; approvals keep their own card and panel below. */
+  const asked = stream.status === "needs_input" && isQuestionInterrupt(stream.interrupt) ? stream.interrupt : null;
+  const hasOptions = Boolean(asked?.options?.length);
+  const askedQuestion = asked?.question;
+  // An open question has no rows to tap, so the cursor goes straight to the message box.
+  useEffect(() => {
+    if (askedQuestion !== undefined && !hasOptions) inputRef.current?.focus();
+  }, [askedQuestion, hasOptions, inputRef]);
+
+  /** One answer per question: the interrupt object that was answered is remembered, and answering it again does nothing. */
+  const answeredRef = useRef<Interrupt | null>(null);
+  function answerQuestion(text: string) {
+    if (!asked || answeredRef.current === asked) return;
+    answeredRef.current = asked;
+    void stream.resume(text);
+  }
+
   function sendText(text: string) {
     const trimmed = text.trim();
     if (!trimmed || busy || disabled) return;
-    void stream.send(trimmed);
+    if (asked) answerQuestion(trimmed);
+    else void stream.send(trimmed);
     setDraft("");
   }
 
@@ -165,7 +206,7 @@ export function FullChat({
     <Box
       {...rootProps}
       sx={[
-        { display: "flex", flexDirection: { xs: "column", md: "row" }, flex: 1, minHeight: 0 },
+        { display: "flex", flexDirection: { xs: "column", md: "row" }, flex: 1, minWidth: 0, minHeight: 0 },
         scheme((c, all) => ({ bgcolor: c.surface, color: c.text, fontFamily: all.fontFamily })),
       ]}
     >
@@ -187,6 +228,7 @@ export function FullChat({
         </Box>
       ) : null}
       <Box sx={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0, minHeight: 0 }}>
+        {header}
         <FileUpload onFilesAdded={onAttach ?? (() => undefined)} disabled={!onAttach}>
           <Conversation
             messages={stream.messages}
@@ -200,6 +242,21 @@ export function FullChat({
             renderUserExtras={renderUserExtras}
             onDownloadFile={onDownloadFile}
             columnMaxWidth={columnMaxWidth}
+            highlightMessageId={highlightMessageId}
+            foldAnswers
+            question={
+              asked
+                ? {
+                    interrupt: asked,
+                    onAnswer: answerQuestion,
+                    onOther: () => inputRef.current?.focus(),
+                    decideAnswer,
+                    decideLabel,
+                    pending: busy || disabled,
+                    labels: questionLabels,
+                  }
+                : undefined
+            }
             emptyState={
               emptyState ?? <ChatEmptyState
                 greeting={greeting}
@@ -226,7 +283,7 @@ export function FullChat({
               {stream.error}
             </SystemMessage>
           ) : null}
-          {stream.status === "needs_input" && stream.interrupt ? (
+          {stream.status === "needs_input" && stream.interrupt && !asked ? (
             <>
               {aboveInterrupt}
               <InterruptPrompt interrupt={stream.interrupt} onAnswer={stream.resume} pending={busy} />
@@ -237,13 +294,13 @@ export function FullChat({
               // The column padding rides inside `scheme`: a separate entry loses to the dark-scheme `p` rule.
               sx={scheme((c) => ({ borderTop: 1, borderColor: c.border, p: 1.5, ...(columnMaxWidth ? columnPadding(columnMaxWidth) : {}) }))}
             >
-              {!draft && !busy && !disabled ? (
+              {!draft && !busy && !disabled && !asked ? (
                 <ComposerPills
                   followUps={stream.followUps}
                   starters={starters}
                   hasMessages={stream.messages.length > 0}
                   onSend={sendText}
-                  onFill={fill}
+                  onFill={sendStarters ? sendText : fill}
                 />
               ) : null}
               {aboveInWrap}
@@ -256,6 +313,7 @@ export function FullChat({
                 busy={busy}
                 disabled={disabled}
                 placeholder={placeholder}
+                answering={asked ? { question: asked.question } : undefined}
                 maxRows={6}
                 attachments={attachments}
                 onAttach={onAttach}

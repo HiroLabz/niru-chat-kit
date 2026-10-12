@@ -205,3 +205,52 @@ describe("Conversation", () => {
     expect(container.querySelector('[role="log"]')).not.toBeNull();
   });
 });
+
+describe("Conversation questions", () => {
+  const asked: ChatMessage = { id: "a1", role: "assistant", text: "I can move it. I need one detail first." };
+  const interrupt = { kind: "clarify", question: "Where will you be staying?", options: ["Cebu City", "Mactan"] };
+
+  it("draws a pending question as a card after the last turn", () => {
+    const onAnswer = vi.fn();
+    render(<Conversation messages={[user, asked]} question={{ interrupt, onAnswer }} />);
+    expect(screen.getByText("One detail before I continue")).toBeInTheDocument();
+    expect(screen.getByText("Where will you be staying?")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Cebu City/ })).toBeInTheDocument();
+  });
+
+  it("does not say the question twice when the reply already ends with it", () => {
+    const reply: ChatMessage = { id: "a2", role: "assistant", text: "Quick check.\n\nWhere will you be staying?" };
+    render(<Conversation messages={[user, reply]} question={{ interrupt, onAnswer: vi.fn() }} />);
+    expect(screen.getAllByText(/Where will you be staying\?/)).toHaveLength(1);
+    expect(screen.getByText("One detail before I continue")).toBeInTheDocument();
+  });
+
+  it("shows nothing extra without the question prop", () => {
+    render(<Conversation messages={[user, asked]} />);
+    expect(screen.queryByText("One detail before I continue")).not.toBeInTheDocument();
+  });
+
+  const answer: ChatMessage = { id: "u2", role: "user", text: "Mactan", answersQuestion: { question: "Where will you be staying?" } };
+
+  it("folds an answered question into one line when foldAnswers is on", () => {
+    render(<Conversation messages={[user, asked, answer]} foldAnswers />);
+    expect(screen.getByText("Mactan").tagName).toBe("B");
+    expect(screen.getByText(/Where will you be staying\?/)).toBeInTheDocument();
+  });
+
+  it("keeps the bubble when foldAnswers is off", () => {
+    render(<Conversation messages={[user, asked, answer]} />);
+    expect(screen.getByText("Mactan").tagName).not.toBe("B");
+    expect(screen.queryByText(/Where will you be staying\?/)).not.toBeInTheDocument();
+  });
+
+  it("offers Change only on the newest folded line", () => {
+    const onChangeAnswer = vi.fn();
+    const reply: ChatMessage = { id: "a3", role: "assistant", text: "Got it." };
+    const { rerender } = render(<Conversation messages={[user, asked, answer]} foldAnswers onChangeAnswer={onChangeAnswer} />);
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    expect(onChangeAnswer).toHaveBeenCalledWith(answer);
+    rerender(<Conversation messages={[user, asked, answer, reply]} foldAnswers onChangeAnswer={onChangeAnswer} />);
+    expect(screen.queryByRole("button", { name: "Change" })).not.toBeInTheDocument();
+  });
+});

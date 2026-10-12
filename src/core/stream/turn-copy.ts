@@ -12,6 +12,8 @@ export const TURN_ACTION_COPY = {
   copy: "Copy",
   copied: "Copied",
   copyFailed: "Could not copy",
+  save: "Save reply",
+  saved: "Saved",
 } as const;
 
 export const DELETE_CONFIRM_COPY = {

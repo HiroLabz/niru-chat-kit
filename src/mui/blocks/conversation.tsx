@@ -1,17 +1,33 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import type { HTMLAttributes } from "react";
 import { newestAssistantId } from "../../core/live-turn";
-import type { ChatMessage, ChatTurnActions } from "../../core/types";
+import { replyEndsWithQuestion } from "../../core/question";
+import type { ChatMessage, ChatTurnActions, Interrupt } from "../../core/types";
 import { ChatContainer } from "../primitives/chat-container";
 import { Message } from "../primitives/message";
 import { ThinkingBar } from "../primitives/thinking-bar";
 import { useChatKitStyles } from "../theme";
+import { flashOverlayStyles, scrollWithin, useFlash } from "./use-flash";
 import { ConversationTurn, TypingDots } from "./conversation-turn";
 import type { DataAttributes } from "./data-attributes";
 import type { FileDownloader } from "./file-chip";
+import { QuestionCard, type QuestionCardLabels } from "./question-card";
+
+/** A question the agent is waiting on, drawn as a card in the thread after the last turn. */
+export type ConversationQuestion = {
+  interrupt: Interrupt;
+  onAnswer: (answer: string) => void;
+  /** Given, the card's last row moves the person to the message box. */
+  onOther?: () => void;
+  /** Given, the card offers "Let the agent decide", which answers with this phrase. */
+  decideAnswer?: string;
+  decideLabel?: string;
+  pending?: boolean;
+  labels?: Partial<QuestionCardLabels>;
+};
 
 /** Side padding that centres content in a column of `maxWidth` px, with a 24 px minimum gutter. */
 export function columnPadding(maxWidth: number) {
@@ -54,9 +70,36 @@ export type ConversationProps = {
    * keeps the turns edge to edge.
    */
   columnMaxWidth?: number;
+  /**
+   * The id of a message to bring into view: the transcript scrolls to it (inside its own
+   * scroll area, never the page) and the turn is tinted with the accent for about 2.5
+   * seconds, or outlined without a fade when the person prefers reduced motion. It runs
+   * again whenever the value changes; set it to undefined to clear it. Turns carry
+   * `data-message-id` (the message's `id`; a message's `serverId` also matches).
+   */
+  highlightMessageId?: string;
+  /**
+   * A question the agent is waiting on. It is drawn as a `QuestionCard` after the last turn
+   * (and the typing row), inside the transcript. If the newest reply already ends with the
+   * question, the card does not say it a second time. Omitted: nothing is drawn.
+   */
+  question?: ConversationQuestion;
+  /**
+   * Draws a user turn that answered a question (`message.answersQuestion`) as one folded
+   * line, the question and the answer, instead of a bubble. Default: false (a bubble).
+   */
+  foldAnswers?: boolean;
+  /** With `foldAnswers`: the folded line of the newest turn shows "Change" and calls this. Absent: no Change link. */
+  onChangeAnswer?: (message: ChatMessage) => void;
   /** Extra attributes for the transcript element, for example an analytics mask. */
   rootProps?: Omit<HTMLAttributes<HTMLDivElement>, "className" | "children" | "role"> & DataAttributes;
 };
+
+/** The text of the newest assistant turn, when that turn is the last one in the thread. */
+function newestReply(messages: ChatMessage[]): string | undefined {
+  const last = messages[messages.length - 1];
+  return last && last.role === "assistant" ? last.text : undefined;
+}
 
 /**
  * The per-turn view of a chat: a scrollable, auto-following `role="log"` transcript of
@@ -78,9 +121,38 @@ export function Conversation({
   footer,
   onDownloadFile,
   columnMaxWidth,
+  highlightMessageId,
+  question,
+  foldAnswers = false,
+  onChangeAnswer,
   rootProps,
 }: ConversationProps) {
   const { scheme } = useChatKitStyles();
+  const highlightFound = Boolean(
+    highlightMessageId && messages.some((m) => m.id === highlightMessageId || m.serverId === highlightMessageId)
+  );
+  const flashing = useFlash(highlightMessageId, highlightFound);
+  useLayoutEffect(() => {
+    if (!highlightMessageId || !highlightFound) return;
+    const reveal = () => {
+      const turns = document.querySelectorAll<HTMLElement>("[data-message-id]");
+      const target = Array.from(turns).find(
+        (node) => node.dataset.messageId === highlightMessageId || node.dataset.serverId === highlightMessageId
+      );
+      const log = target?.closest<HTMLElement>('[role="log"]');
+      if (target && log) scrollWithin(log, target);
+    };
+    reveal();
+    // Turns above the target (markdown, images) can still be growing; look again once they settle.
+    const first = window.requestAnimationFrame(reveal);
+    const second = window.setTimeout(reveal, 200);
+    return () => {
+      window.cancelAnimationFrame(first);
+      window.clearTimeout(second);
+    };
+  }, [highlightMessageId, highlightFound]);
+  const isFlashing = (message: ChatMessage) =>
+    flashing !== null && (message.id === flashing || message.serverId === flashing);
   // While the typing row is up it owns the live face, so the turn above it stays flat
   // rather than running a second simulation.
   const liveId = liveAvatar && !typing ? newestAssistantId(messages) : null;
@@ -93,7 +165,7 @@ export function Conversation({
   // the reply to your next message would render entirely below the fold.
   const rearmKey = newest?.role === "user" ? newest.id : null;
 
-  if (messages.length === 0 && !typing && !footer) {
+  if (messages.length === 0 && !typing && !footer && !question) {
     return (
       emptyState ?? (
         <Box
@@ -115,6 +187,7 @@ export function Conversation({
   return (
     <ChatContainer.Root
       rearmKey={rearmKey}
+      holdKey={highlightFound ? highlightMessageId : null}
       sx={[{ gap: 1.5, p: 2 }, ...(columnMaxWidth ? [columnPadding(columnMaxWidth)] : [])]}
       {...rootProps}
     >
@@ -122,13 +195,35 @@ export function Conversation({
         const custom = renderMessage?.(message);
         if (custom) {
           return (
-            <Box key={message.id} data-role={message.role} sx={{ display: "flex", justifyContent: "flex-start" }}>
+            <Box
+              key={message.id}
+              data-role={message.role}
+              data-message-id={message.id}
+              data-server-id={message.serverId}
+              data-highlighted={isFlashing(message) ? "true" : undefined}
+              sx={[{ display: "flex", justifyContent: "flex-start" }, ...(isFlashing(message) ? [scheme((c) => flashOverlayStyles(c))] : [])]}
+            >
               {custom}
             </Box>
           );
         }
+        const folded = foldAnswers && message.role === "user" ? message.answersQuestion : undefined;
         return (
-          <Box key={message.id} data-role={message.role}>
+          <Box
+            key={message.id}
+            data-role={message.role}
+            data-message-id={message.id}
+            data-server-id={message.serverId}
+            data-highlighted={isFlashing(message) ? "true" : undefined}
+            sx={isFlashing(message) ? scheme((c) => flashOverlayStyles(c)) : undefined}
+          >
+            {folded ? (
+              <QuestionCard
+                question={folded.question}
+                answered={message.text}
+                onChange={onChangeAnswer && message === newest ? () => onChangeAnswer(message) : undefined}
+              />
+            ) : (
             <ConversationTurn
               message={message}
               agentInitial={agentInitial}
@@ -139,6 +234,7 @@ export function Conversation({
               onDownloadFile={onDownloadFile}
               avatar={liveAvatar && message.id === liveId ? liveAvatar : agentAvatar}
             />
+            )}
           </Box>
         );
       })}
@@ -150,6 +246,19 @@ export function Conversation({
             {onStop ? <ThinkingBar onStop={onStop} /> : <TypingDots />}
           </Message.Content>
         </Message>
+      ) : null}
+      {question ? (
+        <QuestionCard
+          question={question.interrupt.question}
+          options={question.interrupt.options}
+          onAnswer={question.onAnswer}
+          onOther={question.onOther}
+          decideAnswer={question.decideAnswer}
+          decideLabel={question.decideLabel}
+          pending={question.pending}
+          labels={question.labels}
+          showQuestion={!replyEndsWithQuestion(newestReply(messages), question.interrupt.question)}
+        />
       ) : null}
       {footer}
     </ChatContainer.Root>
