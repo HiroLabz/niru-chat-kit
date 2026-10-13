@@ -195,12 +195,14 @@ export function ComposerApprovalMoreItems({
             closeMenu();
             if (!selected) approval.onChange(option.value);
           }}
+          // The More menu is a compact list: the description is the row's tooltip, not a second line.
+          title={option.description}
           sx={tone(option)}
         >
           <ListItemIcon sx={{ minWidth: 0, color: "inherit", visibility: selected ? "visible" : "hidden" }}>
             <CheckIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText primary={option.label} secondary={option.description} slotProps={{ secondary: { sx: { color: "inherit", opacity: 0.75, whiteSpace: "normal" } } }} sx={{ ml: 1 }} />
+          <ListItemText primary={option.label} sx={{ ml: 1 }} />
         </MenuItem>
       );
     }),

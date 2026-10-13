@@ -140,7 +140,14 @@ export function ComposerMoreMenu({
           </Badge>
         </span>
       </Tooltip>
-      <Menu id={menuId} anchorEl={anchor} open={Boolean(anchor)} onClose={closeMenu}>
+      <Menu
+        id={menuId}
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={closeMenu}
+        // A narrow composer sits in a narrow panel: the menu stays compact instead of growing to its longest line.
+        slotProps={{ paper: { sx: { maxWidth: "min(300px, calc(100vw - 32px))", maxHeight: "min(70vh, 460px)", "& .MuiMenuItem-root": { whiteSpace: "normal" } } } }}
+      >
         {leadItems?.(context)}
         {appItems}
         {toggles?.map((toggle) => (
