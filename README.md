@@ -196,6 +196,23 @@ Where the browser has no speech recognition (an Electron or Chromium shell, for 
 />
 ```
 
+#### Placing the mic and choosing the microphone
+
+By default the mic sits after the attach button. Set `voicePlacement="end"` on `Composer` (or `FullChat`) to put it immediately left of Send, drawn like the round call button; the call button, if you pass one, then sits before it. The recorder's states (asking, recording with time and level, transcribing, failed) still fit the row.
+
+To let the person choose which microphone records, add `microphones` and `onSelectMicrophone` to the `voice` object. With at least one microphone and a handler, a small "Choose microphone" caret joins the mic button (`aria-haspopup="menu"`). It opens the same menu the call screen uses, with radio items and `microphoneId` checked. Choosing one calls `onSelectMicrophone(deviceId)`; store it and pass it back as `microphoneId`, and the next recording uses it. The caret is disabled while recording or transcribing, and is not drawn with an empty list or without the handler. The words "Choose microphone" and "Microphone" can be changed with `labels.chooseMicrophone` and `labels.unnamedMicrophone`.
+
+```tsx
+const { microphones } = useMicrophones(); // from the core entry; follows devicechange
+<Composer
+  voicePlacement="end"
+  voice={{ transcribe, microphones, microphoneId, onSelectMicrophone: setMicrophoneId }}
+  /* ... */
+/>
+```
+
+`useMicrophones()` returns `{ microphones: { deviceId, label }[], refresh(): Promise<void> }`. The system default is listed first, the "communications" alias and duplicates are dropped, and a microphone whose name the browser still hides is called "Microphone 1", "Microphone 2" and so on. Names appear only after the microphone was allowed once, so call `refresh()` after permission is granted. On a narrow composer with `voicePlacement="end"` the mic stays in the row (attach, More, call, mic, Send) and the microphone list moves into More under a "Choose microphone" heading.
+
 ## Call mode
 
 Call mode is a voice call screen, laid out like Gemini Live, that you can connect to your own voice service. The kit does not include a voice service. You write a `VoiceSession` (a snapshot of the call, a way to subscribe to changes, an audio level meter and a few methods) for LiveKit, WebRTC or the browser, and the kit draws the screens. `createFakeVoiceSession()` is a scriptable stand-in for tests and demos.

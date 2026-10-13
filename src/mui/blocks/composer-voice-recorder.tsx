@@ -6,7 +6,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { keyframes } from "@mui/material/styles";
+import { keyframes, type SxProps, type Theme } from "@mui/material/styles";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
@@ -35,10 +35,12 @@ type RecorderProps = {
   speech: UseSpeechInputResult;
   labels: ComposerVoiceLabels;
   disabled?: boolean;
+  /** Extra style for the mic button itself. */
+  sx?: SxProps<Theme>;
 };
 
 /** The recording mic: start, stop and transcribe, cancel, and the disabled-with-a-reason form. */
-export function RecorderMicButton({ speech, labels, disabled }: RecorderProps) {
+export function RecorderMicButton({ speech, labels, disabled, sx }: RecorderProps) {
   const { scheme } = useChatKitStyles();
   const reasonId = useId();
   const recorded = speech.recorded;
@@ -49,7 +51,7 @@ export function RecorderMicButton({ speech, labels, disabled }: RecorderProps) {
     return (
       <Tooltip title={reason}>
         <span>
-          <IconButton size="small" aria-label={labels.start} aria-describedby={reasonId} disabled>
+          <IconButton size="small" aria-label={labels.start} aria-describedby={reasonId} disabled sx={sx}>
             <MicNoneOutlinedIcon fontSize="small" />
           </IconButton>
           <Box component="span" id={reasonId} sx={{ display: "none" }}>
@@ -73,7 +75,7 @@ export function RecorderMicButton({ speech, labels, disabled }: RecorderProps) {
             aria-busy={working || undefined}
             disabled={disabled || working}
             onClick={recording ? recorded.stop : recorded.start}
-            sx={scheme((c) => (recording ? { color: c.error } : {}))}
+            sx={[...(Array.isArray(sx) ? sx : sx ? [sx] : []), scheme((c) => (recording ? { color: c.error } : {}))]}
           >
             {working ? <CircularProgress size={16} color="inherit" /> : recording ? <StopCircleOutlinedIcon fontSize="small" /> : <MicNoneOutlinedIcon fontSize="small" />}
           </IconButton>
@@ -94,7 +96,7 @@ export function RecorderMicButton({ speech, labels, disabled }: RecorderProps) {
  * The one polite live region of the recording mic. Only the state's words are announced; the timer
  * and the level are hidden from assistive tech so they do not speak every tick.
  */
-export function RecorderStatus({ speech, labels }: Omit<RecorderProps, "disabled">) {
+export function RecorderStatus({ speech, labels }: Omit<RecorderProps, "disabled" | "sx">) {
   const { scheme } = useChatKitStyles();
   const recorded = speech.recorded;
   if (!recorded) return null;

@@ -16,6 +16,12 @@ import Typography from "@mui/material/Typography";
 import { keyframes } from "@mui/material/styles";
 import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
 import MicIcon from "@mui/icons-material/Mic";
+import CheckIcon from "@mui/icons-material/Check";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import { alpha } from "@mui/material/styles";
+import { DEFAULT_CALL_LABELS, type CallTranslate } from "../call/call-labels";
+import { MicrophoneMenuButton } from "../call/call-microphone";
+import { useCallColors } from "../call/call-colors";
 import { speechErrorMessage, useSpeechInput } from "../../core/hooks/use-speech-input";
 import { useChatKitStyles } from "../theme";
 import { DEFAULT_COMPOSER_VOICE_LABELS, type ComposerVoiceLabels, type ComposerVoiceOptions } from "./composer-voice-labels";
@@ -34,6 +40,9 @@ export function appendSpeech(draft: string, phrase: string): string {
 }
 
 export type ComposerVoice = ReturnType<typeof useComposerVoice>;
+
+/** Where the mic sits in the action row: where it always was, or immediately left of Send. */
+export type ComposerVoicePlacement = "start" | "end";
 
 export function useComposerVoice({
   enabled,
@@ -88,13 +97,82 @@ export function useComposerVoice({
   const labels = useMemo<ComposerVoiceLabels>(() => ({ ...DEFAULT_COMPOSER_VOICE_LABELS, ...options?.labels }), [options?.labels]);
   /** Sending: dictation just stops; a recording is discarded so its text cannot land in the next draft. */
   const endForSend = recorded ? recorded.cancel : stop;
-  return { ...speech, visible: enabled && supported, labels, endForSend };
+  const microphones = options?.microphones;
+  const selectMicrophone = options?.onSelectMicrophone;
+  /** The microphone choice, only where recording is on and there is something to choose from and somewhere to put the choice. */
+  const choice =
+    recorded && selectMicrophone && microphones && microphones.length > 0
+      ? { microphones, microphoneId: options?.microphoneId ?? null, select: selectMicrophone }
+      : null;
+  return { ...speech, visible: enabled && supported, labels, endForSend, choice };
 }
 
-export function ComposerMicButton({ voice, disabled }: { voice: ComposerVoice; disabled?: boolean }) {
+/** The checked row of a microphone list: the chosen device, or the system default (else the first row) when none is chosen or the chosen one is not listed. */
+function checkedMicrophone(choice: NonNullable<ComposerVoice["choice"]>): string {
+  const { microphones, microphoneId } = choice;
+  if (microphoneId && microphones.some((mic) => mic.deviceId === microphoneId)) return microphoneId;
+  return (microphones.find((mic) => mic.deviceId === "default") ?? microphones[0]).deviceId;
+}
+
+/** The "Choose microphone" caret joined to the mic: the call picker's own menu, in the composer's colours. */
+function ComposerMicCaret({ voice, disabled }: { voice: ComposerVoice; disabled?: boolean }) {
+  const { scheme } = useChatKitStyles();
+  const colors = useCallColors();
+  const choice = voice.choice;
+  const labels = voice.labels;
+  if (!choice) return null;
+  const t: CallTranslate = (key) =>
+    key === "chooseMicrophone" ? labels.chooseMicrophone : key === "noMicrophone" ? labels.noMicrophone : key === "unnamedMicrophone" ? labels.unnamedMicrophone : DEFAULT_CALL_LABELS[key];
+  return (
+    <MicrophoneMenuButton
+      picker={{ microphones: choice.microphones, microphoneId: checkedMicrophone(choice), select: choice.select }}
+      colors={colors}
+      t={t}
+      disabled={disabled}
+      icon={<KeyboardArrowUpIcon />}
+      sx={scheme((c) => ({
+        width: 20,
+        height: 30,
+        ml: -0.25,
+        borderRadius: "8px",
+        color: c.mutedText,
+        bgcolor: "transparent",
+        "&:hover": { bgcolor: alpha(c.text, 0.08) },
+        "&.Mui-focusVisible": { outline: `2px solid ${c.accent}`, outlineOffset: 1 },
+        "&.Mui-disabled": { opacity: 0.4, color: c.mutedText },
+        "& svg": { fontSize: 18 },
+      }))}
+      paperSx={scheme((c) => ({ bgcolor: c.surface, color: c.text, border: 1, borderColor: c.border }))}
+      itemSx={scheme((c) => ({ "&.Mui-selected, &.Mui-selected:hover": { bgcolor: alpha(c.accent, 0.12) }, "&:hover": { bgcolor: alpha(c.text, 0.06) } }))}
+      emptyItemSx={scheme((c) => ({ "&.Mui-disabled": { color: c.mutedText } }))}
+    />
+  );
+}
+
+export function ComposerMicButton({
+  voice,
+  disabled,
+  placement = "start",
+  caret = true,
+}: {
+  voice: ComposerVoice;
+  disabled?: boolean;
+  placement?: ComposerVoicePlacement;
+  /** False on a narrow row, where the microphone choice lives in More. */
+  caret?: boolean;
+}) {
   const { scheme } = useChatKitStyles();
   if (!voice.visible) return null;
-  if (voice.recorded) return <RecorderMicButton speech={voice} labels={voice.labels} disabled={disabled} />;
+  /** Beside Send the mic is a main action, drawn like the call button it replaces there. */
+  const ring = placement === "end" ? scheme((c) => ({ border: 1, borderColor: c.border, color: c.text })) : undefined;
+  if (voice.recorded) {
+    return (
+      <Box component="span" sx={{ display: "inline-flex", alignItems: "center", flex: "0 0 auto" }}>
+        <RecorderMicButton speech={voice} labels={voice.labels} disabled={disabled} sx={ring} />
+        {caret ? <ComposerMicCaret voice={voice} disabled={disabled || voiceIsBusy(voice)} /> : null}
+      </Box>
+    );
+  }
   const label = voice.listening ? "Stop voice input" : "Start voice input";
   return (
     <Tooltip title={label}>
@@ -105,7 +183,7 @@ export function ComposerMicButton({ voice, disabled }: { voice: ComposerVoice; d
           aria-pressed={voice.listening}
           disabled={disabled}
           onClick={voice.listening ? voice.stop : voice.start}
-          sx={scheme((c) => (voice.listening ? { color: c.error } : {}))}
+          sx={[...(ring ? [ring] : []), scheme((c) => (voice.listening ? { color: c.error } : {}))]}
         >
           {voice.listening ? (
             <MicIcon fontSize="small" />
@@ -188,4 +266,34 @@ export function ComposerMicMenuItem({ voice, disabled, closeMenu }: { voice: Com
       <ListItemText primary={label} secondary={reason || undefined} />
     </MenuItem>
   );
+}
+
+/** The microphone list as radio rows under a "Microphone" heading, for a narrow row's More menu. Nothing when there is no choice. */
+export function ComposerMicChoiceItems({ voice, disabled, closeMenu }: { voice: ComposerVoice; disabled?: boolean; closeMenu: () => void }) {
+  const choice = voice.choice;
+  if (!voice.visible || !choice) return null;
+  const checked = checkedMicrophone(choice);
+  const locked = disabled || voiceIsBusy(voice);
+  return [
+    <MenuItem key="heading" disabled role="presentation" sx={{ "&.Mui-disabled": { opacity: 1 }, typography: "caption", minHeight: 0, py: 0.5 }}>
+      {voice.labels.chooseMicrophone}
+    </MenuItem>,
+    ...choice.microphones.map((mic) => (
+      <MenuItem
+        key={mic.deviceId}
+        role="menuitemradio"
+        aria-checked={mic.deviceId === checked}
+        disabled={locked}
+        onClick={() => {
+          closeMenu();
+          if (mic.deviceId !== checked) choice.select(mic.deviceId);
+        }}
+      >
+        <ListItemIcon sx={{ minWidth: 0, color: "inherit", visibility: mic.deviceId === checked ? "visible" : "hidden" }}>
+          <CheckIcon fontSize="small" />
+        </ListItemIcon>
+        <ListItemText primary={mic.label.trim() || voice.labels.unnamedMicrophone} sx={{ ml: 1, overflowWrap: "anywhere" }} />
+      </MenuItem>
+    )),
+  ];
 }

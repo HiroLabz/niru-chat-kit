@@ -42,11 +42,19 @@ export type ComposerProps = {
   /**
    * Shows a mic toggle that dictates into the box, where the browser supports speech recognition. Default: off.
    * Pass an object with `transcribe` to record instead: the audio goes to your function and the text it returns
-   * is added to the box. See `ComposerVoiceOptions`.
+   * is added to the box. See `ComposerVoiceOptions`; with `microphones` and `onSelectMicrophone` in it, a caret
+   * beside the mic lets the person choose the microphone to record from.
    */
   voice?: boolean | ComposerVoiceOptions;
   /** The dictation language as a BCP 47 tag, for example `en-PH`. Default: the browser's. */
   voiceLang?: string;
+  /**
+   * Where the voice input sits in the action row. `"start"` (default): after the attach button, as always.
+   * `"end"`: immediately left of Send, drawn like the call button (a round outline), with the call button, if any, before it.
+   * On a narrow composer `"end"` keeps the mic in the row (attach, More, [call], mic, Send) and puts the
+   * microphone choice (`voice.microphones`) in More under a "Choose microphone" heading; `"start"` keeps it in More as before.
+   */
+  voicePlacement?: "start" | "end";
   /** On/off chips in the actions row (for example "Search the web"), after the attach button. */
   toggles?: ComposerToggle[];
   /** Extra controls (menu items) shown behind a "More" button in the actions row. */

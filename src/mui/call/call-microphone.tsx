@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState, type KeyboardEvent } from "react";
+import { useId, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
@@ -56,6 +56,14 @@ export interface MicrophoneMenuButtonProps {
   t: CallTranslate;
   disabled?: boolean;
   sx?: SxProps<Theme>;
+  /** The caret's icon; default an up caret. */
+  icon?: ReactNode;
+  /** Style layered over the menu's paper (the composer swaps the dark call stage for its own surface). */
+  paperSx?: SxProps<Theme>;
+  /** Style layered over each row. */
+  itemSx?: SxProps<Theme>;
+  /** Style layered over the single disabled "no microphone" row. */
+  emptyItemSx?: SxProps<Theme>;
 }
 
 /**
@@ -63,7 +71,7 @@ export interface MicrophoneMenuButtonProps {
  * use checked. With one microphone it still opens, so the person can see which is in use; with
  * none it lists one disabled row.
  */
-export function MicrophoneMenuButton({ picker, colors, t, disabled, sx }: MicrophoneMenuButtonProps) {
+export function MicrophoneMenuButton({ picker, colors, t, disabled, sx, icon, paperSx, itemSx, emptyItemSx }: MicrophoneMenuButtonProps) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const reduced = useReducedMotion();
   const id = useId();
@@ -99,7 +107,7 @@ export function MicrophoneMenuButton({ picker, colors, t, disabled, sx }: Microp
           ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
         ]}
       >
-        <KeyboardArrowUpIcon />
+        {icon ?? <KeyboardArrowUpIcon />}
       </IconButton>
       <Menu
         id={id}
@@ -111,12 +119,17 @@ export function MicrophoneMenuButton({ picker, colors, t, disabled, sx }: Microp
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
         slotProps={{
-          paper: { sx: { bgcolor: colors.stage, color: colors.text, border: `1px solid ${colors.border}`, backgroundImage: "none", maxWidth: "min(360px, calc(100vw - 16px))" } },
+          paper: {
+            sx: [
+              { bgcolor: colors.stage, color: colors.text, border: `1px solid ${colors.border}`, backgroundImage: "none", maxWidth: "min(360px, calc(100vw - 16px))" },
+              ...(Array.isArray(paperSx) ? paperSx : paperSx ? [paperSx] : []),
+            ],
+          },
           list: { "aria-label": label, dense: true },
         }}
       >
         {picker.microphones.length === 0 ? (
-          <MenuItem disabled role="menuitem" aria-disabled="true" sx={{ "&.Mui-disabled": { opacity: 1, color: colors.mutedText } }}>
+          <MenuItem disabled role="menuitem" aria-disabled="true" sx={[{ "&.Mui-disabled": { opacity: 1, color: colors.mutedText } }, ...(Array.isArray(emptyItemSx) ? emptyItemSx : emptyItemSx ? [emptyItemSx] : [])]}>
             {t("noMicrophone")}
           </MenuItem>
         ) : (
@@ -132,7 +145,10 @@ export function MicrophoneMenuButton({ picker, colors, t, disabled, sx }: Microp
                   close();
                   if (!current) picker.select(mic.deviceId);
                 }}
-                sx={{ gap: 1, "&.Mui-selected, &.Mui-selected:hover": { bgcolor: colors.control }, "&:hover": { bgcolor: colors.controlHover } }}
+                sx={[
+                  { gap: 1, "&.Mui-selected, &.Mui-selected:hover": { bgcolor: colors.control }, "&:hover": { bgcolor: colors.controlHover } },
+                  ...(Array.isArray(itemSx) ? itemSx : itemSx ? [itemSx] : []),
+                ]}
               >
                 <ListItemIcon sx={{ minWidth: 0, color: "inherit", visibility: current ? "visible" : "hidden" }}>
                   <CheckIcon fontSize="small" />

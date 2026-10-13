@@ -92,6 +92,8 @@ export type FullChatProps = {
   /** Shows the composer's mic; `true` for browser speech recognition, or `ComposerVoiceOptions` to record and transcribe. See `Composer`. */
   voice?: boolean | ComposerVoiceOptions;
   voiceLang?: string;
+  /** Where the composer's voice input sits: `"start"` (default) or `"end"`, immediately left of Send. See `Composer`. */
+  voicePlacement?: "start" | "end";
   /** On/off chips in the composer's action row; see `Composer`. */
   toggles?: ComposerToggle[];
   /** Content of the composer's "More" menu; see `Composer`. */
@@ -167,6 +169,7 @@ export function FullChat({
   look,
   voice,
   voiceLang,
+  voicePlacement,
   toggles,
   moreActions,
   narrowMoreItems,
@@ -357,6 +360,7 @@ export function FullChat({
                 suggestions={starters}
                 voice={voice}
                 voiceLang={voiceLang}
+                voicePlacement={voicePlacement}
                 toggles={toggles}
                 moreActions={moreActions}
                 narrowMoreItems={narrowMoreItems}

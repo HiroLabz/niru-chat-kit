@@ -42,7 +42,7 @@ import { useDismissOnOutsidePointer } from "./use-outside-pointer";
 import { ComposerAttachmentList } from "./composer-attachments";
 import type { ComposerProps } from "./composer-props";
 import { ComposerCallButton } from "./composer-call";
-import { ComposerMicButton, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
+import { ComposerMicButton, ComposerMicChoiceItems, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
 import { ComposerMoreMenu, ComposerToggles } from "./composer-toggles";
 import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
 import { useNarrowBox } from "./use-narrow-box";
@@ -99,6 +99,7 @@ export function Composer({
   rootProps,
   voice: voiceProp = false,
   voiceLang,
+  voicePlacement = "start",
   toggles,
   moreActions,
   narrowMoreItems,
@@ -129,7 +130,10 @@ export function Composer({
   const stopVoice = voice.endForSend;
   const voiceBusy = voiceIsBusy(voice);
   /** Narrow: the mic is a More item while idle, and stays in the row (with its stop control) while it works. */
-  const foldVoice = narrow && voice.visible && !voiceBusy;
+  const micAtEnd = voicePlacement === "end";
+  /** At the end the mic is a main action and stays in the row; only its microphone choice goes into More. */
+  const foldVoice = narrow && !micAtEnd && voice.visible && !voiceBusy;
+  const foldMicChoice = narrow && micAtEnd && voice.visible && Boolean(voice.choice);
   /** Sending ends any dictation, so words heard after Send do not land in the next draft. */
   const submit = useCallback(() => {
     stopVoice();
@@ -293,16 +297,22 @@ export function Composer({
             </PromptInput.Action>
           ) : null}
 
-          {foldVoice ? null : <ComposerMicButton voice={voice} disabled={disabled} />}
+          {foldVoice || micAtEnd ? null : <ComposerMicButton voice={voice} disabled={disabled} />}
 
           {toggles?.length && !foldToggles ? <ComposerToggles toggles={toggles} disabled={disabled} /> : null}
 
-          {moreActions || foldToggles || foldVoice || foldTrailing ? (
+          {moreActions || foldToggles || foldVoice || foldMicChoice || foldTrailing ? (
             <ComposerMoreMenu
               label={moreLabel}
               disabled={disabled}
               toggles={foldToggles ? toggles : undefined}
-              leadItems={foldVoice ? ({ closeMenu }) => <ComposerMicMenuItem voice={voice} disabled={disabled} closeMenu={closeMenu} /> : undefined}
+              leadItems={
+                foldVoice
+                  ? ({ closeMenu }) => <ComposerMicMenuItem voice={voice} disabled={disabled} closeMenu={closeMenu} />
+                  : foldMicChoice
+                    ? ({ closeMenu }) => <ComposerMicChoiceItems voice={voice} disabled={disabled} closeMenu={closeMenu} />
+                    : undefined
+              }
               narrowItems={foldTrailing ? narrowMoreItems : undefined}
             >
               {moreActions}
@@ -316,6 +326,8 @@ export function Composer({
           {endActions}
 
           <ComposerCallButton onStartCall={onStartCall} label={callLabel} disabled={disabled || callDisabled} />
+
+          {micAtEnd ? <ComposerMicButton voice={voice} disabled={disabled} placement="end" caret={!narrow} /> : null}
 
           <ComposerSendButton
             busy={busy}
