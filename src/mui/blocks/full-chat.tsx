@@ -15,6 +15,7 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatHistorySidebar, type ChatHistorySidebarProps } from "./chat-history-sidebar";
 import type { DataAttributes } from "./data-attributes";
 import { Composer, type ComposerAttachment } from "./composer";
+import type { ComposerProps } from "./composer-props";
 import type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
 import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import { ComposerPills } from "./composer-pills";
@@ -128,7 +129,11 @@ export type FullChatProps = {
   decideLabel?: string;
   /** Replaces words on the question card; see `QuestionCardLabels`. */
   questionLabels?: Partial<QuestionCardLabels>;
-};
+} & Pick<
+  ComposerProps,
+  // The composer's opt-in extras, passed straight through; each is documented on `Composer`.
+  "addMenu" | "chips" | "pastedTexts" | "onPasteLongText" | "onRemovePastedText" | "onShowPastedText" | "longPasteThreshold" | "mentions" | "onMention" | "mentionsLabel" | "mentionsEmptyText" | "mentionsLoading" | "approvalMode" | "extrasLabels"
+>;
 
 /**
  * A whole chat on one `useChatStream` result: optional conversation list, the conversation
@@ -187,6 +192,20 @@ export function FullChat({
   decideAnswer,
   decideLabel,
   questionLabels,
+  addMenu,
+  chips,
+  pastedTexts,
+  onPasteLongText,
+  onRemovePastedText,
+  onShowPastedText,
+  longPasteThreshold,
+  mentions,
+  onMention,
+  mentionsLabel,
+  mentionsEmptyText,
+  mentionsLoading,
+  approvalMode,
+  extrasLabels,
 }: FullChatProps) {
   const { scheme } = useChatKitStyles();
   const [draft, setDraft] = useState("");
@@ -374,6 +393,20 @@ export function FullChat({
                 onManageCommands={onManageCommands}
                 manageCommandsLabel={manageCommandsLabel}
                 commandsEmptyText={commandsEmptyText}
+                addMenu={addMenu}
+                chips={chips}
+                pastedTexts={pastedTexts}
+                onPasteLongText={onPasteLongText}
+                onRemovePastedText={onRemovePastedText}
+                onShowPastedText={onShowPastedText}
+                longPasteThreshold={longPasteThreshold}
+                mentions={mentions}
+                onMention={onMention}
+                mentionsLabel={mentionsLabel}
+                mentionsEmptyText={mentionsEmptyText}
+                mentionsLoading={mentionsLoading}
+                approvalMode={approvalMode}
+                extrasLabels={extrasLabels}
               />
             </Box>
           )}

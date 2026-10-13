@@ -309,6 +309,30 @@ const commands: SlashCommand[] = [
 
 The core has `slashQuery(text, caret)`, `matchSlashCommands(commands, query)` and `applySlashCommand(text, range, command)` if you build your own box.
 
+## Add menu, chips, long pastes, mentions and an approval choice
+
+Five opt-in extras for the message box, all passed to `Composer` or straight through `FullChat`. Each appears only when its prop is given; without them the box is exactly as before. The words they add (Add, Search, Loading, No matches, Remove, "{count} characters", Show in text field, the approval heading, Mentions) are in `DEFAULT_COMPOSER_EXTRAS_LABELS`; override any with `extrasLabels={{ add: "Hinzufuegen" }}`.
+
+- **`addMenu`** `{ label?, sections }` replaces the paperclip with a round plus button that opens an "Add" panel above the box (as wide as the box up to 440 px, scrolling past 420 px). When `onAttach` is given and the box is enabled, the first row is the upload action (named by `attachLabel`, opening the same file chooser). A section is `{ id, title?, items, searchable?, searchPlaceholder?, emptyText?, loading? }`; an item is `{ id, label, description?, icon?, onSelect, disabled?, disabledReason?, checked?, keepOpen? }`. A `checked` item is a `menuitemcheckbox` with a check at the right; a disabled item shows its reason in place of its description. A searchable section filters by label and description. Arrows, Home, End and Enter work, typing in a search field does not trigger row shortcuts, Escape closes and returns focus to the plus button. Choosing calls `onSelect` and closes unless `keepOpen`.
+- **`chips`** `{ id, label, icon?, onRemove?, removeLabel?, onClick?, tone? }[]` are small chips in the row after the plus button (tone `"default"`, `"accent"` or `"warning"`). On a narrow box they sit on a line above the row.
+- **Long pasted text.** With `onPasteLongText(text)`, a plain-text paste into the box that is at or over `longPasteThreshold` (`{ characters?: 2000, lines?: 40 }`) does not enter the text: your app gets it. Files in the same paste still go to `onAttach`; shorter pastes and every paste while disabled are untouched. Hold the text yourself and pass `pastedTexts` (`{ id, text, title? }[]`): each is drawn above the field as a chip with an icon tile, the title (default the first non-empty line, cut with an ellipsis), the size, a "Show in text field" link (`onShowPastedText(id)`) and a remove button (`onRemovePastedText(id)`). The kit never sends or stores the text: you decide what Send does with it. Core helpers: `isLongPaste(text, threshold?)` and `pastedTextTitle(text)`.
+- **`mentions`** `ComposerMention[]` (`{ id, label, description?, icon?, group?, keywords? }`) opens a list when the person types `@` at the start of the text or after whitespace (never in an email address or inside a word). Typing filters by label, keywords and description; items are grouped by `group`; ArrowUp, ArrowDown, Home and End move, Enter or Tab pick, Escape closes and keeps the text. Picking replaces the `@query` with `@Label ` and calls `onMention(item)`. Also `mentionsLabel` (default "Mentions"), `mentionsEmptyText` (default "No matches") and `mentionsLoading`. It never opens together with the slash list. Core helpers: `mentionQuery(value, caret)`, `applyMention(value, range, item)`, `matchMentions(items, query)` and `mentionsIn(value, items)`, which returns the items whose `@Label` is still in the text as a whole token, so you can send exactly those.
+- **`approvalMode`** `{ value, options, onChange, heading?, learnMore?, disabled?, disabledReason?, buttonLabel? }` draws a quiet button with the current option's icon and label (accessible name "heading: label") that opens a menu headed by `heading` with `learnMore` as a link at its right and the options as `menuitemradio` rows (icon, label, description, a check on the current one; `tone: "warning"` colours a row). On a narrow box the choices move into More.
+
+The row reads: plus (or paperclip), voice at `"start"`, chips, approval, toggles, your `trailing`, then call, voice at `"end"` and Send.
+
+```tsx
+<Composer value={draft} onChange={setDraft} onSubmit={send}
+  onAttach={addFiles}
+  addMenu={{ sections: [{ id: "modes", items: [{ id: "plan", label: "Plan mode", description: "Turn plan mode on", checked: plan, keepOpen: true, onSelect: () => setPlan(!plan) }] }] }}
+  chips={plan ? [{ id: "plan", label: "Plan mode", tone: "accent", onRemove: () => setPlan(false) }] : []}
+  onPasteLongText={(text) => setHeld((all) => [...all, { id: newId(), text }])}
+  pastedTexts={held}
+  onRemovePastedText={(id) => setHeld((all) => all.filter((item) => item.id !== id))}
+  mentions={tools} onMention={(tool) => track(tool.id)}
+  approvalMode={{ value: mode, onChange: setMode, options }} />
+```
+
 ## Tool input and output
 
 `Tool` takes optional `input` and `output`. A string shows as text and anything else as formatted JSON, coloured from the tokens. They sit inside the expanded card, which starts collapsed. If you pass neither, nothing extra is drawn. `state` also accepts the prompt-kit names (`input-streaming`, `input-available`, `output-available`, `output-error`) as other ways to write the existing statuses.

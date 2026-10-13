@@ -40,6 +40,13 @@ import { SlashCommandMenu } from "./slash-command-menu";
 import { useSlashCommands } from "./use-slash-commands";
 import { useDismissOnOutsidePointer } from "./use-outside-pointer";
 import { ComposerAttachmentList } from "./composer-attachments";
+import { ComposerAddButton, ComposerAddPanel, useComposerAddMenu } from "./composer-add-menu";
+import { ComposerApprovalButton, ComposerApprovalMoreItems } from "./composer-approval-mode";
+import { ComposerChips } from "./composer-chips";
+import { composerExtrasLabels } from "./composer-extras-labels";
+import { MentionMenu, useMentions } from "./composer-mentions";
+import { ComposerPastedTextList } from "./composer-pasted-text";
+import { takePaste } from "./composer-paste";
 import type { ComposerProps } from "./composer-props";
 import { ComposerCallButton } from "./composer-call";
 import { ComposerMicButton, ComposerMicChoiceItems, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
@@ -50,6 +57,10 @@ import { useNarrowBox } from "./use-narrow-box";
 export type { ComposerAttachment } from "./composer-attachments";
 export type { ComposerProps } from "./composer-props";
 export type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
+export type { ComposerAddItem, ComposerAddMenuOptions, ComposerAddSection } from "./composer-add-menu";
+export type { ComposerApprovalMode, ComposerApprovalOption } from "./composer-approval-mode";
+export type { ComposerChip } from "./composer-chips";
+export { DEFAULT_COMPOSER_EXTRAS_LABELS, type ComposerExtrasLabels } from "./composer-extras-labels";
 
 /** How far the field grows before it scrolls. */
 const MAX_FIELD_ROWS = 12;
@@ -116,14 +127,41 @@ export function Composer({
   onManageCommands,
   manageCommandsLabel = "Edit commands",
   commandsEmptyText = "No matching commands",
+  addMenu,
+  chips,
+  pastedTexts,
+  onPasteLongText,
+  onRemovePastedText,
+  onShowPastedText,
+  longPasteThreshold,
+  mentions,
+  onMention,
+  mentionsLabel,
+  mentionsEmptyText,
+  mentionsLoading,
+  approvalMode,
+  extrasLabels,
 }: ComposerProps) {
   const { scheme } = useChatKitStyles();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsId = useId();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const composerRootRef = useRef<HTMLDivElement | null>(null);
+  const extras = composerExtrasLabels(extrasLabels);
+  const addLabel = addMenu?.label ?? extras.add;
+  const add = useComposerAddMenu({
+    disabled,
+    canAttach: Boolean(onAttach),
+    attachLabel,
+    attachDisabled,
+    attachTooltip,
+    uploadIcon: <AttachFileOutlinedIcon fontSize="small" />,
+    openFileChooser: () => fileInput.current?.click(),
+  });
   const narrow = useNarrowBox(composerRootRef, TOGGLES_INTO_MORE_BELOW);
   const foldToggles = narrow && Boolean(toggles?.length);
+  const approvalHeading = approvalMode?.heading ?? extras.approvalHeading;
+  const foldApproval = narrow && Boolean(approvalMode);
   const foldTrailing = narrow && narrowMoreItems !== undefined && narrowMoreItems !== null;
   const canSend = value.trim().length > 0 && !disabled && !busy;
   const voice = useComposerVoice({ enabled: Boolean(voiceProp), value, onChange, lang: voiceLang, options: typeof voiceProp === "object" ? voiceProp : undefined });
@@ -140,15 +178,19 @@ export function Composer({
     onSubmit();
   }, [stopVoice, onSubmit]);
   const slash = useSlashCommands({ value, onChange, commands, onCommand, onManage: onManageCommands, inputRef });
-  // The slash list owns the box while it is open, so the autocomplete list stays out of its way.
+  // The mention list never opens with the slash list; it passes the textarea on to the slash list's own ref.
+  const mention = useMentions({ value, onChange, mentions, onMention, suppressed: slash.open, inputRef: slash.inputRef });
+  const fieldAria = mention.open ? mention.inputProps : { ...mention.inputProps, ...slash.inputProps };
+  // An open list owns the box, so the autocomplete list stays out of its way.
   const composerSuggestions = useComposerSuggestions({
     value,
-    suggestions: slash.open ? NO_SUGGESTIONS : suggestions,
+    suggestions: slash.open || mention.open ? NO_SUGGESTIONS : suggestions,
     onFill: onChange,
   });
-  /** The slash list gets each key first; what it leaves alone goes on to the suggestions. */
+  /** The slash and mention lists get each key first; what they leave alone goes on to the suggestions. */
   function handleFieldKeyDown(event: KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) {
     slash.handleKeyDown(event);
+    if (!event.defaultPrevented) mention.handleKeyDown(event);
     if (!event.defaultPrevented) composerSuggestions.handleKeyDown(event);
   }
 
@@ -162,6 +204,7 @@ export function Composer({
   // Both floating lists close on a click anywhere outside the composer, like any combobox popup.
   useDismissOnOutsidePointer(composerRootRef, composerSuggestions.open, composerSuggestions.close);
   useDismissOnOutsidePointer(composerRootRef, slash.open, slash.close);
+  useDismissOnOutsidePointer(composerRootRef, mention.open, mention.close);
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -169,21 +212,9 @@ export function Composer({
     event.target.value = "";
   }
 
-  /** Files on the clipboard (a screenshot, a copied image or files) attach; plain text pastes as text. */
   function handlePaste(event: ClipboardEvent<HTMLDivElement>) {
-    if (!onAttach || disabled) return;
-    const data = event.clipboardData;
-    if (!data) return;
-    let files = Array.from(data.files ?? []);
-    if (!files.length) {
-      files = Array.from(data.items ?? [])
-        .filter((item) => item.kind === "file")
-        .map((item) => item.getAsFile())
-        .filter((file): file is File => file !== null);
-    }
-    if (!files.length) return;
-    event.preventDefault();
-    onAttach(files);
+    if (disabled) return;
+    if (takePaste(event, { onAttach, onPasteLongText, threshold: longPasteThreshold })) event.preventDefault();
   }
 
   return (
@@ -223,6 +254,9 @@ export function Composer({
           </Typography>
         ) : null}
         <ComposerAttachmentList attachments={attachments} onRemoveAttachment={onRemoveAttachment} />
+        {pastedTexts?.length ? (
+          <ComposerPastedTextList items={pastedTexts} labels={extras} disabled={disabled} onShow={onShowPastedText} onRemove={onRemovePastedText} />
+        ) : null}
 
         <Collapse in={settingsOpen} unmountOnExit>
           <Box
@@ -254,19 +288,25 @@ export function Composer({
           slotProps={{
             input: {
               ...({ "data-chat": "composer-field" } as object),
-              inputRef: slash.inputRef,
+              inputRef: mention.inputRef,
               inputProps: {
                 "data-chat": "composer-input",
                 "aria-expanded": composerSuggestions.open,
                 "aria-controls": composerSuggestions.open ? composerSuggestions.listboxId : undefined,
                 "aria-activedescendant": composerSuggestions.activeId,
-                ...slash.inputProps,
+                ...fieldAria,
               },
             },
           }}
         />
 
         <ComposerVoiceStatus voice={voice} />
+
+        {narrow && chips?.length ? (
+          <Box data-chat="composer-chips" sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, mt: 0.75 }}>
+            <ComposerChips chips={chips} disabled={disabled} removeWord={extras.remove} />
+          </Box>
+        ) : null}
 
         <PromptInput.Actions sx={{ mt: 0.75, flexWrap: narrow ? "nowrap" : "wrap", minWidth: 0 }} slotProps={{ root: { "data-chat": "composer-bar" } as never }}>
           {settings ? (
@@ -283,7 +323,16 @@ export function Composer({
             </PromptInput.Action>
           ) : null}
 
-          {onAttach ? (
+          {addMenu ? (
+            <ComposerAddButton
+              label={addLabel}
+              open={add.open}
+              disabled={disabled}
+              panelId={add.panelId}
+              buttonRef={add.buttonRef}
+              onToggle={add.toggle}
+            />
+          ) : onAttach ? (
             <PromptInput.Action tooltip={attachTooltip ?? attachLabel}>
               <IconButton
                 size="small"
@@ -299,19 +348,25 @@ export function Composer({
 
           {foldVoice || micAtEnd ? null : <ComposerMicButton voice={voice} disabled={disabled} />}
 
+          {!narrow && chips?.length ? <ComposerChips chips={chips} disabled={disabled} removeWord={extras.remove} /> : null}
+
+          {approvalMode && !narrow ? <ComposerApprovalButton approval={approvalMode} heading={approvalHeading} disabled={disabled} /> : null}
+
           {toggles?.length && !foldToggles ? <ComposerToggles toggles={toggles} disabled={disabled} /> : null}
 
-          {moreActions || foldToggles || foldVoice || foldMicChoice || foldTrailing ? (
+          {moreActions || foldToggles || foldVoice || foldMicChoice || foldTrailing || foldApproval ? (
             <ComposerMoreMenu
               label={moreLabel}
               disabled={disabled}
               toggles={foldToggles ? toggles : undefined}
               leadItems={
-                foldVoice
-                  ? ({ closeMenu }) => <ComposerMicMenuItem voice={voice} disabled={disabled} closeMenu={closeMenu} />
-                  : foldMicChoice
-                    ? ({ closeMenu }) => <ComposerMicChoiceItems voice={voice} disabled={disabled} closeMenu={closeMenu} />
-                    : undefined
+                foldVoice || foldMicChoice || foldApproval
+                  ? ({ closeMenu }) => [
+                      foldVoice ? <ComposerMicMenuItem key="mic" voice={voice} disabled={disabled} closeMenu={closeMenu} /> : null,
+                      foldMicChoice ? <ComposerMicChoiceItems key="mics" voice={voice} disabled={disabled} closeMenu={closeMenu} /> : null,
+                      foldApproval && approvalMode ? <ComposerApprovalMoreItems key="approval" approval={approvalMode} heading={approvalHeading} disabled={disabled} closeMenu={closeMenu} /> : null,
+                    ]
+                  : undefined
               }
               narrowItems={foldTrailing ? narrowMoreItems : undefined}
             >
@@ -343,6 +398,26 @@ export function Composer({
         ) : null}
       </PromptInput>
       <ComposerSuggestionsList controller={composerSuggestions} />
+      {addMenu && add.open ? (
+        <ComposerAddPanel
+          id={add.panelId}
+          label={addLabel}
+          upload={add.upload}
+          sections={addMenu.sections}
+          labels={extras}
+          buttonRef={add.buttonRef}
+          onClose={add.close}
+        />
+      ) : null}
+      {mention.open ? (
+        <MentionMenu
+          controller={mention}
+          label={mentionsLabel ?? extras.mentions}
+          emptyText={mentionsEmptyText ?? extras.mentionsEmpty}
+          loadingText={extras.loading}
+          loading={mentionsLoading}
+        />
+      ) : null}
       {slash.open ? (
         <SlashCommandMenu
           commands={slash.matches}

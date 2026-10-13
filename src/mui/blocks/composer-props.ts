@@ -1,10 +1,16 @@
 import type { ReactNode, Ref } from "react";
 import type { BoxProps } from "@mui/material/Box";
 import type { SlashCommand } from "../../core/slash-commands";
+import type { ComposerMention } from "../../core/mentions";
+import type { ComposerPastedText, LongPasteThreshold } from "../../core/pasted-text";
 import type { DataAttributes } from "./data-attributes";
 import type { ComposerAttachment } from "./composer-attachments";
 import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
+import type { ComposerAddMenuOptions } from "./composer-add-menu";
+import type { ComposerApprovalMode } from "./composer-approval-mode";
+import type { ComposerChip } from "./composer-chips";
+import type { ComposerExtrasLabels } from "./composer-extras-labels";
 
 export type ComposerProps = {
   value: string;
@@ -98,4 +104,51 @@ export type ComposerProps = {
   manageCommandsLabel?: string;
   /** Said in the list when nothing matches; default "No matching commands". */
   commandsEmptyText?: string;
+  /**
+   * Replaces the paperclip with a round plus button that opens an "Add" panel above the box: when the composer can
+   * attach (`onAttach` given, not disabled) the first row is the upload action (named by `attachLabel`, opening the
+   * same file chooser), then your `sections` in order, each with an optional title, rows with icon, label, one grey
+   * line, an optional check, a disabled reason, and an optional search field for a long section. Arrows, Home, End
+   * and Enter work; Escape closes and returns focus to the plus button. Omitted: the paperclip, exactly as before.
+   */
+  addMenu?: ComposerAddMenuOptions;
+  /** Small state chips in the row after the plus button ("Plan mode", "Goal: ..."). With no room they wrap to their own line; on a narrow composer they sit on a line above the row. */
+  chips?: ComposerChip[];
+  /**
+   * Long pastes you are holding for the person, drawn above the text beside the attachment previews: an icon tile, the
+   * title (default the first non-empty line), the size, a "Show in text field" link (needs `onShowPastedText`) and a remove
+   * button (needs `onRemovePastedText`). The kit never sends or stores the text: you decide what Send does with it.
+   */
+  pastedTexts?: ComposerPastedText[];
+  /**
+   * Given, a plain-text paste into the box that is at or over `longPasteThreshold` does not enter the text: it is handed
+   * to this function (files in the same paste still go to `onAttach`). Shorter pastes, and every paste while the composer
+   * is disabled, are untouched. Omitted: pasting behaves as before.
+   */
+  onPasteLongText?: (text: string) => void;
+  /** The remove button on a pasted text chip. */
+  onRemovePastedText?: (id: string) => void;
+  /** The "Show in text field" link on a pasted text chip. */
+  onShowPastedText?: (id: string) => void;
+  /** What counts as a long paste: at least `characters` (default 2000) or `lines` (default 40). */
+  longPasteThreshold?: LongPasteThreshold;
+  /**
+   * Items offered when the person types `@` at the start of the text or after whitespace (never in an email address or
+   * inside a word). A list opens above the box, typing filters it (label, keywords, description), items are grouped by
+   * `group`, ArrowUp/ArrowDown/Home/End move, Enter or Tab pick, Escape closes and keeps the text. Picking writes
+   * `@Label ` and calls `onMention`. Given (even empty) the list is on; omitted: no mentions. Never open with the slash list.
+   */
+  mentions?: ComposerMention[];
+  /** Called after an item is picked and the text is updated. Use `mentionsIn(value, items)` at send time to find which are still in the text. */
+  onMention?: (item: ComposerMention) => void;
+  /** The mention list's accessible name; default "Mentions". */
+  mentionsLabel?: string;
+  /** Said in the mention list when nothing matches; default "No matches". */
+  mentionsEmptyText?: string;
+  /** Shows a quiet "Loading" row in the mention list, for items that arrive late. */
+  mentionsLoading?: boolean;
+  /** A quiet button in the row with the current approval choice that opens a menu of choices. On a narrow composer the choices move into More. */
+  approvalMode?: ComposerApprovalMode;
+  /** Overrides for the words of the extras above (Add menu, chips, pasted text, approval); see `ComposerExtrasLabels`. */
+  extrasLabels?: Partial<ComposerExtrasLabels>;
 };
