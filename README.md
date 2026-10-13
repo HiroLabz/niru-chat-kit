@@ -263,6 +263,8 @@ Give `ChatTurnActions` an `onDelete(message)` function and `TurnActions` shows a
 
 `toggles` adds on and off chips to the row under the message box. Each is `{ id, label, icon, active, onToggle, disabled? }` and is announced to screen readers as pressed or not. `moreActions` takes any content, usually menu items, and shows it behind a "More" button.
 
+When the composer itself is narrower than 460 px (a side panel, for example) the row keeps only attach, More, the call button and Send, on one line. Voice input becomes a "Record a voice message" item in More (while it records or transcribes, its stop control shows in the row again), the toggles become checkable items, and a dot marks More while a toggle is on (its name becomes "More, 1 on"). Controls you pass as `trailing` stay in the row unless you also pass `narrowMoreItems`: menu items, or a function `({ closeMenu }) => items`, shown in More instead of `trailing` when narrow. Use the function form for an item that opens a picker and should close the menu afterwards.
+
 ```tsx
 <Composer value={draft} onChange={setDraft} onSubmit={send}
   toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]}

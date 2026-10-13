@@ -14,7 +14,7 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatHistorySidebar, type ChatHistorySidebarProps } from "./chat-history-sidebar";
 import type { DataAttributes } from "./data-attributes";
 import { Composer, type ComposerAttachment } from "./composer";
-import type { ComposerToggle } from "./composer-toggles";
+import type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
 import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import { ComposerPills } from "./composer-pills";
 import { columnPadding, Conversation, type ConversationProps } from "./conversation";
@@ -95,6 +95,8 @@ export type FullChatProps = {
   toggles?: ComposerToggle[];
   /** Content of the composer's "More" menu; see `Composer`. */
   moreActions?: ReactNode;
+  /** How `trailing`-style app controls appear in the More menu on a narrow composer; see `Composer`. */
+  narrowMoreItems?: ReactNode | ((context: ComposerMoreContext) => ReactNode);
   moreLabel?: string;
   /** Shows the composer's call button; see `Composer`. */
   onStartCall?: () => void;
@@ -154,6 +156,7 @@ export function FullChat({
   voiceLang,
   toggles,
   moreActions,
+  narrowMoreItems,
   moreLabel,
   onStartCall,
   callLabel,
@@ -337,6 +340,7 @@ export function FullChat({
                 voiceLang={voiceLang}
                 toggles={toggles}
                 moreActions={moreActions}
+                narrowMoreItems={narrowMoreItems}
                 moreLabel={moreLabel}
                 onStartCall={onStartCall}
                 callLabel={callLabel}

@@ -180,6 +180,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     voiceLang: "The language for dictation, as a tag such as en-PH. Default: the browser's language.",
     toggles: "On/off chips in the row of buttons under the message box, such as Search the web.",
     moreActions: "Menu items shown behind a More button in that row.",
+    narrowMoreItems: "When the composer is narrow, these menu items (or a function receiving { closeMenu }) replace `trailing` in the More menu. Omit it to keep `trailing` in the row.",
     moreLabel: "The More button's name for screen readers. Default: More.",
     onStartCall: "Shows a round phone button next to Send and calls this when it is pressed. Leave it out while a call is running.",
     callLabel: "Tooltip and screen reader name for the phone button. Default: Start a call.",

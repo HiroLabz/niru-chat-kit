@@ -8,6 +8,9 @@
 import { useEffect, useMemo, useRef } from "react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { keyframes } from "@mui/material/styles";
@@ -157,5 +160,32 @@ export function ComposerVoiceStatus({ voice }: { voice: ComposerVoice }) {
         problem
       )}
     </Typography>
+  );
+}
+
+/** True while the mic is doing something the person must be able to stop from the row: dictating, asking, recording, transcribing. */
+export function voiceIsBusy(voice: ComposerVoice): boolean {
+  if (voice.recorded) return ["asking", "recording", "transcribing"].includes(voice.recorded.state);
+  return voice.listening;
+}
+
+/** The mic as a More-menu item, for a narrow row. Choosing it closes the menu and starts, as the button does. */
+export function ComposerMicMenuItem({ voice, disabled, closeMenu }: { voice: ComposerVoice; disabled?: boolean; closeMenu: () => void }) {
+  if (!voice.visible) return null;
+  const reason = voice.recorded ? voice.disabledReason : null;
+  const label = voice.recorded ? voice.labels.start : "Start voice input";
+  return (
+    <MenuItem
+      disabled={disabled || Boolean(reason)}
+      onClick={() => {
+        closeMenu();
+        (voice.recorded ? voice.recorded.start : voice.start)();
+      }}
+    >
+      <ListItemIcon sx={{ color: "inherit" }}>
+        <MicNoneOutlinedIcon fontSize="small" />
+      </ListItemIcon>
+      <ListItemText primary={label} secondary={reason || undefined} />
+    </MenuItem>
   );
 }

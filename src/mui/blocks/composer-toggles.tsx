@@ -3,6 +3,7 @@
 /** Toggle chips and the "More" menu in the composer's actions row. */
 
 import { useId, useState, type ReactNode } from "react";
+import Badge from "@mui/material/Badge";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
@@ -52,41 +53,66 @@ export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle
   );
 }
 
+/** What a More-menu slot receives: close the menu (for an item that finishes on click). */
+export type ComposerMoreContext = { closeMenu: () => void };
+
 /**
- * The More menu. `toggles` are the composer's toggle chips when the row is too narrow for them:
- * each becomes a checkable item (`role="menuitemcheckbox"`), above `children`.
+ * The More menu. `leadItems` are the composer's own items for a narrow row (voice input), then `narrowItems`
+ * are the app's, then `toggles` (the toggle chips when the row is too narrow for them: each becomes a checkable
+ * item, `role="menuitemcheckbox"`), then a divider, then `children`.
+ * A small dot marks the button while a toggle inside is on, and the accessible name says how many ("More, 1 on").
  */
 export function ComposerMoreMenu({
   children,
   label = "More",
   disabled,
   toggles,
+  leadItems,
+  narrowItems,
 }: {
   children?: ReactNode;
   label?: string;
   disabled?: boolean;
   toggles?: ComposerToggle[];
+  leadItems?: (context: ComposerMoreContext) => ReactNode;
+  narrowItems?: ReactNode | ((context: ComposerMoreContext) => ReactNode);
 }) {
+  const { scheme } = useChatKitStyles();
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const menuId = useId();
+  const closeMenu = () => setAnchor(null);
+  const context: ComposerMoreContext = { closeMenu };
+  const activeCount = toggles?.filter((toggle) => toggle.active).length ?? 0;
+  const name = activeCount ? `${label}, ${activeCount} on` : label;
+  const appItems = typeof narrowItems === "function" ? narrowItems(context) : narrowItems;
+  const hasCommon = Boolean(toggles?.length) || Boolean(leadItems) || Boolean(appItems);
   return (
     <>
       <Tooltip title={label}>
         <span>
-          <IconButton
-            size="small"
-            aria-label={label}
-            aria-haspopup="menu"
-            aria-expanded={Boolean(anchor)}
-            aria-controls={anchor ? menuId : undefined}
-            disabled={disabled}
-            onClick={(event) => setAnchor(event.currentTarget)}
+          <Badge
+            variant="dot"
+            invisible={!activeCount}
+            data-chat="more-active"
+            sx={scheme((c) => ({ "& .MuiBadge-badge": { bgcolor: c.accent, top: 4, right: 4 } }))}
           >
-            <MoreHorizIcon fontSize="small" />
-          </IconButton>
+            <IconButton
+              size="small"
+              aria-label={name}
+              aria-haspopup="menu"
+              aria-expanded={Boolean(anchor)}
+              aria-controls={anchor ? menuId : undefined}
+              disabled={disabled}
+              onClick={(event) => setAnchor(event.currentTarget)}
+            >
+              <MoreHorizIcon fontSize="small" />
+            </IconButton>
+          </Badge>
         </span>
       </Tooltip>
-      <Menu id={menuId} anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)}>
+      <Menu id={menuId} anchorEl={anchor} open={Boolean(anchor)} onClose={closeMenu}>
+        {leadItems?.(context)}
+        {appItems}
         {toggles?.map((toggle) => (
           <MenuItem
             key={toggle.id}
@@ -100,7 +126,7 @@ export function ComposerMoreMenu({
             {toggle.active ? <CheckIcon fontSize="small" sx={{ ml: 2 }} /> : null}
           </MenuItem>
         ))}
-        {toggles?.length && children ? <Divider component="li" /> : null}
+        {hasCommon && children ? <Divider component="li" /> : null}
         {children}
       </Menu>
     </>

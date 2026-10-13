@@ -44,13 +44,13 @@ import { ComposerSuggestionsList, useComposerSuggestions } from "./composer-sugg
 import { ComposerAttachmentList, type ComposerAttachment } from "./composer-attachments";
 import { ComposerCallButton } from "./composer-call";
 import type { ComposerVoiceOptions } from "./composer-voice-labels";
-import { ComposerMicButton, ComposerVoiceStatus, useComposerVoice } from "./composer-voice";
-import { ComposerMoreMenu, ComposerToggles, type ComposerToggle } from "./composer-toggles";
+import { ComposerMicButton, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
+import { ComposerMoreMenu, ComposerToggles, type ComposerMoreContext, type ComposerToggle } from "./composer-toggles";
 import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
 import { useNarrowBox } from "./use-narrow-box";
 
 export type { ComposerAttachment } from "./composer-attachments";
-export type { ComposerToggle } from "./composer-toggles";
+export type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
 
 /** How far the field grows before it scrolls. */
 const MAX_FIELD_ROWS = 12;
@@ -118,7 +118,14 @@ export type ComposerProps = {
   toggles?: ComposerToggle[];
   /** Extra controls (menu items) shown behind a "More" button in the actions row. */
   moreActions?: ReactNode;
-  /** The "More" button's accessible name; default "More". */
+  /**
+   * How the app's own row controls (`trailing`) appear when the composer is narrow. Omitted: `trailing` stays in the row.
+   * Given, and narrow: `trailing` leaves the row and these items are shown in the More menu, below the voice item and
+   * above the toggles and `moreActions`. Pass menu items, or a function that receives `{ closeMenu }` for an item
+   * that opens something else and should close the menu when it is done. Wide composers ignore it.
+   */
+  narrowMoreItems?: ReactNode | ((context: ComposerMoreContext) => ReactNode);
+  /** The "More" button's accessible name; default "More". The name gains ", N on" while N toggles inside are on. */
   moreLabel?: string;
   /** Shows a round call button in the actions row, just before Send. Omit it while a call is running. */
   onStartCall?: () => void;
@@ -166,6 +173,7 @@ export function Composer({
   voiceLang,
   toggles,
   moreActions,
+  narrowMoreItems,
   moreLabel,
   onStartCall,
   callLabel,
@@ -181,9 +189,13 @@ export function Composer({
   const composerRootRef = useRef<HTMLDivElement | null>(null);
   const narrow = useNarrowBox(composerRootRef, TOGGLES_INTO_MORE_BELOW);
   const foldToggles = narrow && Boolean(toggles?.length);
+  const foldTrailing = narrow && narrowMoreItems !== undefined && narrowMoreItems !== null;
   const canSend = value.trim().length > 0 && !disabled && !busy;
   const voice = useComposerVoice({ enabled: Boolean(voiceProp), value, onChange, lang: voiceLang, options: typeof voiceProp === "object" ? voiceProp : undefined });
   const stopVoice = voice.endForSend;
+  const voiceBusy = voiceIsBusy(voice);
+  /** Narrow: the mic is a More item while idle, and stays in the row (with its stop control) while it works. */
+  const foldVoice = narrow && voice.visible && !voiceBusy;
   /** Sending ends any dictation, so words heard after Send do not land in the next draft. */
   const submit = useCallback(() => {
     stopVoice();
@@ -322,7 +334,7 @@ export function Composer({
 
         <ComposerVoiceStatus voice={voice} />
 
-        <PromptInput.Actions sx={{ mt: 0.75, flexWrap: "wrap", minWidth: 0 }} slotProps={{ root: { "data-chat": "composer-bar" } as never }}>
+        <PromptInput.Actions sx={{ mt: 0.75, flexWrap: narrow ? "nowrap" : "wrap", minWidth: 0 }} slotProps={{ root: { "data-chat": "composer-bar" } as never }}>
           {settings ? (
             <PromptInput.Action tooltip={settingsLabel}>
               <IconButton
@@ -351,17 +363,23 @@ export function Composer({
             </PromptInput.Action>
           ) : null}
 
-          <ComposerMicButton voice={voice} disabled={disabled} />
+          {foldVoice ? null : <ComposerMicButton voice={voice} disabled={disabled} />}
 
           {toggles?.length && !foldToggles ? <ComposerToggles toggles={toggles} disabled={disabled} /> : null}
 
-          {moreActions || foldToggles ? (
-            <ComposerMoreMenu label={moreLabel} disabled={disabled} toggles={foldToggles ? toggles : undefined}>
+          {moreActions || foldToggles || foldVoice || foldTrailing ? (
+            <ComposerMoreMenu
+              label={moreLabel}
+              disabled={disabled}
+              toggles={foldToggles ? toggles : undefined}
+              leadItems={foldVoice ? ({ closeMenu }) => <ComposerMicMenuItem voice={voice} disabled={disabled} closeMenu={closeMenu} /> : undefined}
+              narrowItems={foldTrailing ? narrowMoreItems : undefined}
+            >
               {moreActions}
             </ComposerMoreMenu>
           ) : null}
 
-          {trailing}
+          {foldTrailing ? null : trailing}
 
           <Box sx={{ flexGrow: 1 }} />
 
