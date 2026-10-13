@@ -43,6 +43,7 @@ import type { DataAttributes } from "./data-attributes";
 import { ComposerSuggestionsList, useComposerSuggestions } from "./composer-suggestions";
 import { ComposerAttachmentList, type ComposerAttachment } from "./composer-attachments";
 import { ComposerCallButton } from "./composer-call";
+import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import { ComposerMicButton, ComposerVoiceStatus, useComposerVoice } from "./composer-voice";
 import { ComposerMoreMenu, ComposerToggles, type ComposerToggle } from "./composer-toggles";
 import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
@@ -105,8 +106,12 @@ export type ComposerProps = {
   inputRef?: Ref<HTMLTextAreaElement | HTMLInputElement>;
   /** Extra attributes for the bordered surface, for example an analytics mask. */
   rootProps?: Partial<BoxProps> & DataAttributes;
-  /** Shows a mic toggle that dictates into the box, where the browser supports speech recognition. Default: off. */
-  voice?: boolean;
+  /**
+   * Shows a mic toggle that dictates into the box, where the browser supports speech recognition. Default: off.
+   * Pass an object with `transcribe` to record instead: the audio goes to your function and the text it returns
+   * is added to the box. See `ComposerVoiceOptions`.
+   */
+  voice?: boolean | ComposerVoiceOptions;
   /** The dictation language as a BCP 47 tag, for example `en-PH`. Default: the browser's. */
   voiceLang?: string;
   /** On/off chips in the actions row (for example "Search the web"), after the attach button. */
@@ -157,7 +162,7 @@ export function Composer({
   suggestions = NO_SUGGESTIONS,
   inputRef,
   rootProps,
-  voice: voiceEnabled = false,
+  voice: voiceProp = false,
   voiceLang,
   toggles,
   moreActions,
@@ -177,8 +182,8 @@ export function Composer({
   const narrow = useNarrowBox(composerRootRef, TOGGLES_INTO_MORE_BELOW);
   const foldToggles = narrow && Boolean(toggles?.length);
   const canSend = value.trim().length > 0 && !disabled && !busy;
-  const voice = useComposerVoice({ enabled: voiceEnabled, value, onChange, lang: voiceLang });
-  const stopVoice = voice.stop;
+  const voice = useComposerVoice({ enabled: Boolean(voiceProp), value, onChange, lang: voiceLang, options: typeof voiceProp === "object" ? voiceProp : undefined });
+  const stopVoice = voice.endForSend;
   /** Sending ends any dictation, so words heard after Send do not land in the next draft. */
   const submit = useCallback(() => {
     stopVoice();

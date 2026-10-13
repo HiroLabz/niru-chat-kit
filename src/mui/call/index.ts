@@ -16,3 +16,4 @@ export { useCallColors, type CallColors, type CallColorOverrides } from "./call-
 export { DEFAULT_CALL_LABELS, type CallLabels, type CallLabelKey } from "./call-labels";
 export type { CallPerson, CallVisual } from "./call-context";
 export { useReducedMotion } from "./use-reduced-motion";
+export { useCallActivity, DEFAULT_QUIET_AFTER_MS, type CallActivity } from "./call-activity";

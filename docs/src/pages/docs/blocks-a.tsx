@@ -180,6 +180,29 @@ function ComposerVoiceAndToggles() {
 }
 // #endregion
 
+// #region composer-voice-record
+function ComposerRecording() {
+  const [draft, setDraft] = useState("");
+  const [onCall, setOnCall] = useState(false);
+  // Your own call to a speech-to-text service goes here. Reject with an Error whose message is plain words.
+  const transcribe = async (audio: Blob, info: { mime: string; durationMs: number }) => {
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    return `(a ${Math.round(info.durationMs / 1000)} second ${info.mime} recording, ${audio.size} bytes)`;
+  };
+  return (
+    <Stack spacing={1}>
+      <Composer
+        value={draft}
+        onChange={setDraft}
+        onSubmit={() => setDraft("")}
+        voice={{ transcribe, maxDurationMs: 60_000, disabledReason: onCall ? "The microphone is in use on a call." : null }}
+      />
+      <Button size="small" onClick={() => setOnCall((on) => !on)}>{onCall ? "End the pretend call" : "Pretend a call uses the microphone"}</Button>
+    </Stack>
+  );
+}
+// #endregion
+
 // #region composer-pills
 function Pills() {
   const [last, setLast] = useState("");
@@ -232,9 +255,10 @@ export const BLOCKS_A: Record<string, ComponentDoc> = {
     examples: [
       example(raw, "composer-basic", <ComposerBasic />, { title: "Attachments, settings, suggestions and a busy box", description: "Type to see suggestions. The second box shows the Stop button, which appears while a reply is running." }),
       example(raw, "composer-voice-toggles", <ComposerVoiceAndToggles />, { title: "Voice, toggles and the More menu", description: "The microphone shows only in browsers that support speech recognition. Toggles are on/off chips, and the More button holds extra menu items." }),
+      example(raw, "composer-voice-record", <ComposerRecording />, { title: "Voice input that records", description: "Pass voice as an object with transcribe. The mic records, shows the time and a level, and hands the audio to your function. Escape or the mic stops and transcribes; Cancel discards. The button below sets disabledReason." }),
       example(raw, "composer-call", <ComposerCall />, { title: "A call button", description: "onStartCall adds a round phone button right before Send. Leave the prop out while a call is running." }),
     ],
-    notes: <>Voice uses the browser&apos;s own speech recognition (the <C>useSpeechInput</C> hook in the core), so there is no paid service. Some browsers send the audio to their own speech service. The kit never sees it. Firefox has no speech recognition, so the microphone does not show there.</>,
+    notes: <>Voice has two forms. With <C>voice</C> set to <C>true</C> it uses the browser&apos;s own speech recognition (below). With <C>voice</C> as an object that has <C>transcribe</C> it records instead, so it also works where the browser has no speech recognition (an Electron or Chromium shell, for example). <C>transcribe(audio, {`{ mime, durationMs }`})</C> is yours: send the audio to your speech-to-text service and resolve with the text, which is added to the box with one space between. Reject with an Error whose message is plain words and it is shown as the reason. An empty result shows &quot;Nothing was heard&quot; and adds nothing. What the person typed is never changed on a failure, and the mic can be pressed again. The mic shows wherever <C>getUserMedia</C> and <C>MediaRecorder</C> exist. Also in the object: <C>microphoneId</C>, <C>maxDurationMs</C> (default 120000; recording stops and is transcribed), <C>disabledReason</C> (the mic is shown disabled with that sentence as tooltip and description, for example while a call has the microphone; a recording in progress is discarded) and <C>labels</C> (<C>start</C>, <C>stop</C>, <C>cancel</C>, <C>asking</C>, <C>recording</C>, <C>transcribing</C>, <C>permissionDenied</C>, <C>noMicrophone</C>, <C>microphoneBusy</C>, <C>recordingFailed</C>, <C>transcriptionFailed</C>, <C>nothingHeard</C>). The state words sit in one polite live region; the timer is not read out. Sending the message discards a recording in progress. Every microphone track is stopped on stop, cancel, failure and unmount, and the kit keeps no audio after <C>transcribe</C> settles. <br /><br />The browser form uses the browser&apos;s own speech recognition (the <C>useSpeechInput</C> hook in the core), so there is no paid service. Some browsers send the audio to their own speech service. The kit never sees it. Firefox has no speech recognition, so the microphone does not show there.</>,
   },
   "composer-pills": {
     summary: "The pills above the message box. Before the first message they are starter prompts, and picking one fills the box. After a reply that came with follow-up questions they are those follow-ups, and picking one sends it.",

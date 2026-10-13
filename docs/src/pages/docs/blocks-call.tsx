@@ -78,6 +78,29 @@ function StripAndCard() {
 }
 // #endregion
 
+// #region call-activity
+function ActivityExample() {
+  const session = useMemo(() => createFakeVoiceSession({ phase: "thinking", activity: "Searching the web" }), []);
+  const snapshot = useVoiceSession(session);
+  return (
+    <Stack spacing={2} sx={{ height: "100%" }}>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+        <Button size="small" onClick={() => session.script.setActivity("Searching the web")}>Searching</Button>
+        <Button size="small" onClick={() => session.script.setActivity("Making a picture")}>Making a picture</Button>
+        <Button size="small" onClick={() => session.script.setActivity(null)}>No activity</Button>
+        <Button size="small" onClick={() => session.script.setPhase("thinking")}>Thinking</Button>
+        <Button size="small" onClick={() => session.script.setPhase("listening")}>Listening</Button>
+        <Typography variant="caption" sx={{ alignSelf: "center" }}>phase: {snapshot.phase}</Typography>
+      </Stack>
+      <CallStrip session={session} agentName="Niru" quietAfterMs={4000} />
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <CallStage session={session} agent={{ name: "Niru" }} autoFocus={false} quietAfterMs={4000} />
+      </Box>
+    </Stack>
+  );
+}
+// #endregion
+
 // #region call-local-media
 function LocalPreview() {
   const media = useLocalMedia();
@@ -156,6 +179,11 @@ export const BLOCKS_CALL: Record<string, ComponentDoc> = {
         description: "The small arrow next to the microphone button opens the list. The same arrow is on the bar when you minimise the call with the arrow at the top left or Escape; Return to call brings the full screen back.",
         height: 560,
       }),
+      example(raw, "call-activity", <ActivityExample />, {
+        title: "Saying what the assistant is doing",
+        description: "While the call is thinking, the app's sentence shows under the status and in the small bar. Choose No activity and wait four seconds (the wait is shortened here) to see Still working on it. Back to Listening, the line goes away.",
+        height: 640,
+      }),
       example(raw, "call-local-media", <LocalPreview />, {
         title: "Camera and screen share, on this device only",
         description: "The buttons ask your browser for the camera or a screen. The preview stays on this page. Nothing is recorded or sent.",
@@ -175,6 +203,9 @@ export const BLOCKS_CALL: Record<string, ComponentDoc> = {
         </p>
         <p>
           Choosing a microphone: a session may list <C>microphones</C> and the <C>microphoneId</C> in use in its snapshot and implement <C>selectMicrophone(deviceId)</C>. Or give <C>CallStage</C> and <C>CallStrip</C> the props <C>microphones</C>, <C>microphoneId</C> and <C>onSelectMicrophone</C> yourself, which win over the session. When something can select, a small &quot;Choose microphone&quot; arrow sits next to the microphone button and opens a menu with the one in use checked (<C>menuitemradio</C>). It shows even for a single microphone, so the person can see which one is in use. With an empty list the menu has one disabled row, &quot;No microphone found&quot;. The same arrow is on <C>CallStrip</C>. The kit lists and switches nothing itself: your voice service enumerates the devices and switches the track. Words come from the call <C>labels</C> (<C>chooseMicrophone</C>, <C>noMicrophone</C>, <C>unnamedMicrophone</C>). Without these, nothing new is drawn.
+        </p>
+        <p>
+          Saying what is happening: set <C>activity</C> on the snapshot (or pass the <C>activity</C> prop to <C>CallStage</C> or <C>CallStrip</C>, which wins) to a short sentence such as &quot;Searching the web&quot;. While the phase is <C>thinking</C> (and <C>speaking</C>, if you still set one) it shows as a second line under the status, and on the bar in place of the status text, cut with an ellipsis with the full sentence as a tooltip. When the call returns to listening it goes away. With no activity the call keeps saying &quot;Thinking&quot;, and after <C>quietAfterMs</C> (default 8000) in <C>thinking</C> the second line says &quot;Still working on it&quot; (<C>labels.stillWorking</C>), so a person never sees a frozen screen. The sentence lives in the same single live region, so a screen reader reads it politely; focus never moves, and nothing animates under reduced motion. Write the sentence yourself and keep message text and file names out of it. <C>createFakeVoiceSession</C> takes <C>activity</C>, and <C>script.setActivity</C> changes it.
         </p>
         <p>
           Minimising: when you pass <C>onMinimise</C> to <C>CallStage</C>, the header shows a &quot;Minimise call&quot; button and Escape does the same. Your app then stops drawing the stage and draws a <C>CallStrip</C> (for example as <C>aboveComposer</C>) with <C>onExpand</C> set to switch back. The strip&apos;s main button is labelled &quot;Open call&quot; by default; change it with <C>labels.openCall</C> (for example &quot;Return to call&quot;). Both use the same session, so the call keeps running while you switch.

@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useRecordedSpeech, type TranscribeAudio, type UseRecordedSpeechResult } from "./use-recorded-speech";
 
 type RecognitionResult = ArrayLike<{ transcript: string }> & { isFinal: boolean };
 type RecognitionEvent = { resultIndex: number; results: ArrayLike<RecognitionResult> };
@@ -33,6 +34,17 @@ export type UseSpeechInputOptions = {
   onFinal?: (text: string) => void;
   /** Called with the phrase still being recognised. */
   onInterim?: (text: string) => void;
+  /**
+   * Records instead of using the browser's speech recognition: the audio is handed here when the
+   * person stops, and the text it resolves with goes to `onFinal`. Absent: browser recognition, as before.
+   */
+  transcribe?: TranscribeAudio;
+  /** With `transcribe`: a `deviceId` to record from; null or absent: the default microphone. */
+  microphoneId?: string | null;
+  /** With `transcribe`: recording stops by itself and is transcribed after this long. Default 120000. */
+  maxDurationMs?: number;
+  /** With `transcribe`: set while voice input must not start (for example during a call). `start` does nothing. */
+  disabledReason?: string | null;
 };
 
 export type UseSpeechInputResult = {
@@ -43,6 +55,10 @@ export type UseSpeechInputResult = {
   error: string | null;
   start: () => void;
   stop: () => void;
+  /** Set when `transcribe` was given: the recorder's own state (elapsed time, level, failure). Null otherwise. */
+  recorded: UseRecordedSpeechResult | null;
+  /** The `disabledReason` that was passed, or null. */
+  disabledReason: string | null;
 };
 
 function recognitionConstructor(): RecognitionConstructor | null {
@@ -67,6 +83,18 @@ export function speechErrorMessage(code: string | null): string {
       return "I did not hear anything. Try again.";
     case "audio-capture":
       return "No microphone was found.";
+    case "permission-denied":
+      return "Microphone access was blocked. Allow it in your browser to record.";
+    case "no-microphone":
+      return "No microphone was found.";
+    case "microphone-busy":
+      return "The microphone is in use by something else.";
+    case "recording-failed":
+      return "The recording stopped. Try again.";
+    case "transcription-failed":
+      return "The recording could not be turned into text. Try again.";
+    case "nothing-heard":
+      return "I did not hear anything. Try again.";
     case "network":
       return "Voice input needs a network connection.";
     default:
@@ -75,6 +103,32 @@ export function speechErrorMessage(code: string | null): string {
 }
 
 export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechInputResult {
+  const recorded = useRecordedSpeech({
+    transcribe: options.transcribe,
+    microphoneId: options.microphoneId,
+    maxDurationMs: options.maxDurationMs,
+    onFinal: options.onFinal,
+  });
+  const recognition = useBrowserSpeech(options);
+  const disabledReason = options.disabledReason?.trim() || null;
+  const { start: startRecording } = recorded;
+  const startUnlessDisabled = useCallback(() => {
+    if (!disabledReason) startRecording();
+  }, [disabledReason, startRecording]);
+  if (!options.transcribe) return { ...recognition, recorded: null, disabledReason: null };
+  return {
+    supported: recorded.supported,
+    listening: recorded.state === "recording",
+    interim: "",
+    error: recorded.failure,
+    start: startUnlessDisabled,
+    stop: recorded.stop,
+    recorded,
+    disabledReason,
+  };
+}
+
+function useBrowserSpeech(options: UseSpeechInputOptions): Omit<UseSpeechInputResult, "recorded" | "disabledReason"> {
   const [supported, setSupported] = useState(false);
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");

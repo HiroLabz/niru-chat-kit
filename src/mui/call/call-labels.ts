@@ -12,6 +12,8 @@ export interface CallLabels {
   listeningMuted: string;
   thinking: string;
   speaking: string;
+  /** The reassuring line under "Thinking" after a long quiet stretch with no activity from the app. */
+  stillWorking: string;
   held: string;
   ended: string;
   failed: string;
@@ -71,6 +73,7 @@ export const DEFAULT_CALL_LABELS: CallLabels = {
   listeningMuted: "Your mic is off",
   thinking: "Thinking",
   speaking: "{agent} is talking",
+  stillWorking: "Still working on it",
   held: "Call on hold",
   ended: "Call ended",
   failed: "The call stopped",

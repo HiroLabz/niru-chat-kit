@@ -4,12 +4,18 @@ import type { ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { alpha } from "@mui/material/styles";
+import { alpha, keyframes } from "@mui/material/styles";
 import type { VoiceSnapshot } from "../../core/voice/voice-types";
 import { useCall } from "./call-context";
 import type { CallLabelKey } from "./call-labels";
 import { CallOrb } from "./call-orb";
 import { orbStateOf } from "./call-orb-state";
+import { useReducedMotion } from "./use-reduced-motion";
+
+const fadeIn = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`;
 
 const STEP_KEYS = {
   joining: "stepJoining",
@@ -77,7 +83,9 @@ function DefaultMark({ name }: { name: string }) {
  * hears each state change once. A blocked browser sound adds "Tap to hear"; a held call adds "Resume".
  */
 export function CallStageStatus({ mark, children }: CallStageStatusProps) {
-  const { session, snapshot, t, visual, agent } = useCall();
+  const { session, snapshot, t, visual, agent, activity } = useCall();
+  const reduced = useReducedMotion();
+  const activityLine = activity.text ?? (activity.quiet ? t("stillWorking") : null);
   const line = children ?? t(statusKeyOf(snapshot));
   const deviceError = snapshot.deviceError;
   const centre =
@@ -93,6 +101,17 @@ export function CallStageStatus({ mark, children }: CallStageStatusProps) {
         <Typography component="p" data-testid="call-status-line" sx={{ fontSize: "clamp(1.35rem, 4.5vw, 2.4rem)", fontWeight: 400, lineHeight: 1.2, overflowWrap: "anywhere" }}>
           {line}
         </Typography>
+        {activityLine ? (
+          <Typography
+            component="p"
+            key={activityLine}
+            data-testid="call-activity-line"
+            data-motion={reduced ? "none" : "fade"}
+            sx={{ mt: 1, fontSize: "clamp(1rem, 2.6vw, 1.25rem)", opacity: 0.8, lineHeight: 1.3, overflowWrap: "anywhere", animation: reduced ? "none" : `${fadeIn} 0.25s ease-out`, "@media (prefers-reduced-motion: reduce)": { animation: "none" } }}
+          >
+            {activityLine}
+          </Typography>
+        ) : null}
         {deviceError ? (
           <Typography component="p" data-testid="call-device-error" variant="body2" sx={{ mt: 1, opacity: 0.75 }}>
             {deviceError.reason === "denied" ? t("deviceDenied") : t("deviceUnavailable")}

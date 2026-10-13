@@ -27,6 +27,8 @@ export interface FakeVoiceSessionOptions {
   capabilities?: Partial<VoiceCapabilities>;
   captions?: boolean;
   muted?: boolean;
+  /** The activity sentence at the start; absent: the snapshot has no `activity`. */
+  activity?: string | null;
   /**
    * Microphones to list. Given (even empty), the session reports them and implements
    * `selectMicrophone`; left out, it has no picker at all.
@@ -52,6 +54,8 @@ export interface FakeVoiceScript {
   setPhase(phase: VoicePhase, step?: VoiceJoinStep): void;
   setStep(step: VoiceJoinStep | null): void;
   setLevels(levels: Partial<VoiceLevelSnapshot>): void;
+  /** Set or clear (null) the activity sentence, as a transport does while the assistant works. */
+  setActivity(activity: string | null): void;
   /** Add a line (or an interim one with `final: false`); returns its id. */
   say(speaker: VoiceTranscriptSegment["speaker"], text: string, options?: { final?: boolean; id?: string }): string;
   /** Replace the text of a line and mark it final. */
@@ -101,6 +105,7 @@ export function createFakeVoiceSession(options: FakeVoiceSessionOptions = {}): F
     phase: startPhase,
     step: startPhase === "connecting" ? options.step ?? "joining" : null,
     muted: options.muted ?? false,
+    ...(options.activity !== undefined ? { activity: options.activity } : {}),
     ...(options.microphones ? { microphones: options.microphones, microphoneId: options.microphoneId ?? null } : {}),
     captions: options.captions ?? true,
     transcript: options.transcript ?? [],
@@ -201,6 +206,7 @@ export function createFakeVoiceSession(options: FakeVoiceSessionOptions = {}): F
     setPhase,
     setStep: (step) => set({ step }),
     setLevels: (next) => levels.set(next),
+    setActivity: (activity) => set({ activity }),
     say(speaker, text, opts = {}) {
       counter += 1;
       const id = opts.id ?? `fake-${counter}`;

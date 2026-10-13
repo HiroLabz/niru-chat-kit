@@ -177,11 +177,31 @@ const { supported, listening, interim, error, start, stop } = useSpeechInput({
 });
 ```
 
+### Voice input that records
+
+Where the browser has no speech recognition (an Electron or Chromium shell, for example), or when you want your own speech-to-text, pass `voice` as an object with `transcribe`. The mic then records with `MediaRecorder`, shows the elapsed time and a level, and on stop hands the audio to your function. The text it returns is added to the box. Escape or the mic stops and transcribes; Cancel discards. What the person typed is never changed when something fails.
+
+```tsx
+<Composer
+  value={draft}
+  onChange={setDraft}
+  onSubmit={send}
+  voice={{
+    transcribe: async (audio, { mime, durationMs }) => (await myStt(audio, mime)).text, // reject with a plain-words Error on failure
+    microphoneId, // optional deviceId
+    maxDurationMs: 60_000, // default 120000
+    disabledReason: onCall ? "The microphone is in use on a call." : null,
+    labels: { start: "Record a voice message" },
+  }}
+/>
+```
+
 ## Call mode
 
 Call mode is a voice call screen, laid out like Gemini Live, that you can connect to your own voice service. The kit does not include a voice service. You write a `VoiceSession` (a snapshot of the call, a way to subscribe to changes, an audio level meter and a few methods) for LiveKit, WebRTC or the browser, and the kit draws the screens. `createFakeVoiceSession()` is a scriptable stand-in for tests and demos.
 
 - `CallStage` is the full-screen call. It has a dark background with a soft glow in the accent colour. A menu slot sits at the top left, a captions switch and the person's avatar at the top right. The agent's mark and one large status line are in the centre ("The mic is yours, Kio" while listening; you can change the text for each state with `labels`). A row of round buttons runs along the bottom: camera, share screen, a wide pill that moves with the voice, microphone and end. A button only appears when the session says it can do that. Space mutes, Escape minimises (when `onMinimise` is set), and End asks for no confirmation. To lay the screen out yourself, use `CallStage.Header`, `.Status`, `.Captions`, `.Preview` and `.Controls`.
+- Set `activity` on the snapshot (or the `activity` prop on `CallStage` or `CallStrip`) to a short sentence such as "Searching the web". While the call is thinking it shows under the status (on the strip it replaces the status text, on one line). With none, a long wait changes the line to "Still working on it" after `quietAfterMs` (default 8000).
 - `VoiceLevelPill` is the default moving visual. `CallOrb` (`visual="orb"`) is Niru's orb, with a plain CSS circle where the browser has no WebGL. Both stay still when the person has asked their device for reduced motion.
 - `CallStrip` is the minimised call. Pass it to `FullChat` as `aboveComposer` and it sits directly above the message box. Give `FullChat` (or `Composer`) `onStartCall` to show the round phone button next to Send; leave `onStartCall` out while a call is running. You can also set `callLabel` and `callDisabled`.
 - `CallCard` is the record of a finished call, with a Show transcript toggle.

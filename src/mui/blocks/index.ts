@@ -24,3 +24,4 @@ export * from "./turn-copy-button";
 export * from "./turn-save-button";
 export * from "./turn-steps";
 export * from "./turn-timeline";
+export * from "./composer-voice-labels";

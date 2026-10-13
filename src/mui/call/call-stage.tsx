@@ -11,6 +11,7 @@ import { CallContext, useCall, type CallContextValue, type CallPerson, type Call
 import { CallStageControls } from "./call-controls";
 import { CallStageCaptions } from "./call-captions";
 import { CallStageHeader } from "./call-header";
+import { useCallActivity } from "./call-activity";
 import { useMicrophonePicker, type MicrophoneProps } from "./call-microphone";
 import { makeTranslate, type CallLabels } from "./call-labels";
 import { CallProblemScreen, problemScreenOf } from "./call-problems";
@@ -32,6 +33,13 @@ export interface CallStageProps extends MicrophoneProps {
   visual?: CallVisual;
   /** Overrides for the colours derived from the kit's tokens. */
   colors?: CallColorOverrides;
+  /**
+   * What the assistant is doing, as a short sentence such as "Searching the web". Wins over
+   * `snapshot.activity`. Drawn under the status while thinking (and speaking); gone when the call returns to listening.
+   */
+  activity?: string | null;
+  /** In `thinking` with no activity, the second line becomes "Still working on it" after this long. Default 8000. */
+  quietAfterMs?: number;
   /** Escape and the minimise button call this; the app draws a `CallStrip` meanwhile. */
   onMinimise?: () => void;
   /** Close on the problem screens. */
@@ -89,7 +97,7 @@ function DefaultLayout() {
  * Escape minimises, End needs no confirmation. Compose your own with the parts, for example
  * `<CallStage session={s}><CallStage.Status /><CallStage.Controls /></CallStage>`.
  */
-function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, microphones, microphoneId, onSelectMicrophone, overlay = false, autoFocus = true, children, className, sx }: CallStageProps) {
+function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = "pill", colors: overrides, onMinimise, onClose, onCallAgain, microphones, microphoneId, onSelectMicrophone, activity: activityProp, quietAfterMs, overlay = false, autoFocus = true, children, className, sx }: CallStageProps) {
   const snapshot = useVoiceSession(session);
   const colors = useCallColors(overrides);
   const root = useRef<HTMLDivElement>(null);
@@ -98,9 +106,11 @@ function CallStageRoot({ session, user = {}, agent = {}, menu, labels, visual = 
     if (autoFocus) root.current?.focus({ preventScroll: true });
   }, [autoFocus]);
   const microphone = useMicrophonePicker(session, snapshot, { microphones, microphoneId, onSelectMicrophone });
+  const { text: activityText, quiet } = useCallActivity(snapshot, activityProp, quietAfterMs);
+  const activity = useMemo(() => ({ text: activityText, quiet }), [activityText, quiet]);
   const value = useMemo<CallContextValue>(
-    () => ({ session, snapshot, colors, t, visual, agent, user, microphone, menu, onMinimise, onClose, onCallAgain }),
-    [session, snapshot, colors, t, visual, agent, user, microphone, menu, onMinimise, onClose, onCallAgain]
+    () => ({ session, snapshot, colors, t, visual, agent, user, activity, microphone, menu, onMinimise, onClose, onCallAgain }),
+    [session, snapshot, colors, t, visual, agent, user, activity, microphone, menu, onMinimise, onClose, onCallAgain]
   );
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape" && onMinimise) {

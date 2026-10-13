@@ -17,6 +17,7 @@ import type { VoiceSession } from "../../core/voice/voice-types";
 import { CallColorsContext, useCallColors, type CallColorOverrides } from "./call-colors";
 import { CallControlButton } from "./call-control-button";
 import { pillSource } from "./call-controls";
+import { useCallActivity } from "./call-activity";
 import { MicrophoneMenuButton, useMicrophonePicker, type MicrophoneProps } from "./call-microphone";
 import { makeTranslate, type CallLabels } from "./call-labels";
 import { statusKeyOf } from "./call-status";
@@ -30,6 +31,10 @@ export interface CallStripProps extends MicrophoneProps {
   userName?: string;
   labels?: Partial<CallLabels>;
   colors?: CallColorOverrides;
+  /** What the assistant is doing; wins over `snapshot.activity`. Shown in place of the status text while thinking (and speaking), cut with an ellipsis, the full sentence in a tooltip. */
+  activity?: string | null;
+  /** In `thinking` with no activity, the status text becomes "Still working on it" after this long. Default 8000. */
+  quietAfterMs?: number;
   /** Brings the full-screen `CallStage` back. The strip body and the expand button both call it. */
   onExpand?: () => void;
   sx?: SxProps<Theme>;
@@ -53,12 +58,14 @@ function useElapsed(startedAt: number | null, endedAt: number | null): number {
  * button when the session supports it, the "Choose microphone" caret when a microphone can be selected, and End.
  * The body (labelled "Open call", see `labels.openCall`) returns to the full screen with `onExpand`.
  */
-export function CallStrip({ session, agentName, userName, labels, colors: overrides, onExpand, microphones, microphoneId, onSelectMicrophone, sx }: CallStripProps) {
+export function CallStrip({ session, agentName, userName, labels, colors: overrides, onExpand, microphones, microphoneId, onSelectMicrophone, activity: activityProp, quietAfterMs, sx }: CallStripProps) {
   const snapshot = useVoiceSession(session);
   const colors = useCallColors(overrides);
   const t = useMemo(() => makeTranslate(labels, { name: userName, agent: agentName }), [labels, userName, agentName]);
   const elapsed = useElapsed(snapshot.startedAt, snapshot.endedAt);
   const microphone = useMicrophonePicker(session, snapshot, { microphones, microphoneId, onSelectMicrophone });
+  const activity = useCallActivity(snapshot, activityProp, quietAfterMs);
+  const statusText = activity.text ?? (activity.quiet ? t("stillWorking") : t(statusKeyOf(snapshot)));
   const { capabilities, muted, cameraOn, screenOn, phase } = snapshot;
   const live = phase !== "ended" && phase !== "failed";
   return (
@@ -86,8 +93,8 @@ export function CallStrip({ session, agentName, userName, labels, colors: overri
             <Box aria-hidden sx={{ width: 10, height: 10, flex: "0 0 auto", borderRadius: "50%", bgcolor: colors.mutedText }} />
           )}
           <Box sx={{ minWidth: 0, flex: "0 1 auto", textAlign: "left" }}>
-            <Typography role="status" aria-live="polite" component="span" noWrap sx={{ display: "block", fontSize: 14, fontWeight: 600 }}>
-              {t(statusKeyOf(snapshot))}
+            <Typography role="status" aria-live="polite" component="span" noWrap title={activity.text ?? undefined} data-testid="call-strip-status" sx={{ display: "block", fontSize: 14, fontWeight: 600 }}>
+              {statusText}
             </Typography>
             <Typography component="span" noWrap data-testid="call-strip-time" sx={{ display: "block", fontSize: 12, color: colors.mutedText }}>
               {formatCallDuration(elapsed)}

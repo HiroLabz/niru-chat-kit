@@ -14,7 +14,7 @@ You implement one `ChatTransport` (the only thing that knows your backend), pass
 - Transport and types: `ChatTransport`, `ChatTurn`, `ChatMessage`, `ChatTurnActions`, frame types, `ChatTransportError`.
 - Streaming: `useChatStream` and its parts, `parseSseStream`, the frame reducers (`applyToolFrame`, `applyThinkingFrame`, turn parts).
 - History: `toChatMessages`, `annotateFromHistory`, `conversationAgeGroup`, `groupConversationsByAge`, `filterConversations`.
-- Voice: `useSpeechInput`, `speechErrorMessage`.
+- Voice: `useSpeechInput` (browser recognition, or recording with `transcribe`), `useRecordedSpeech`, `speechErrorMessage`.
 - Voice calls: the `VoiceSession` contract (`VoiceSnapshot`, `VoicePhase`, `VoiceJoinStep`, `VoiceProblem`, `VoiceCapabilities`, `VoiceLevels`, `VoiceTranscriptSegment`), `useVoiceSession`, `createFakeVoiceSession`, `useLocalMedia`, `createLocalMedia`, `followLevels`, `createLevels`, `summariseCall`, `formatCallDuration`.
 - Tokens: `ChatKitTokens`, `applyChatKitOverrides`.
 - Approvals and maths helpers.
@@ -22,7 +22,7 @@ You implement one `ChatTransport` (the only thing that knows your backend), pass
 ## MUI entry (`@hiro/niru-chat-kit/mui`)
 
 - Whole chat: `FullChat`, `Conversation`, `ConversationTurn`, `ChatHistorySidebar` (pin, Saved tab), `ConversationHeader`, `ChatEmptyState`.
-- Input: `Composer` (attachments, settings, `voice`, `toggles`, `moreActions`), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
+- Input: `Composer` (attachments, settings, `voice` (true, or `ComposerVoiceOptions` with `transcribe` to record), `toggles`, `moreActions`), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
 - Turn parts: `TurnActions`, `TurnTimeline`, `TurnSteps`, `Tool`, `Reasoning`, `Steps`, `ChainOfThought`, `Source`, `SourceList`, `MessageMedia` (images, videos and audio under a reply; core type `MediaItem`), `FeedbackBar`, `Image`, `Markdown`, `CodeBlock`, `JSXPreview`.
 - Human in the loop: `InterruptPrompt`, `ApprovalCard`, `QuestionCard` (the in-thread question with tappable answers), `MessageEditForm`.
 - Call mode: `CallStage` (`.Header`, `.Status`, `.Captions`, `.Preview`, `.Controls`), `VoiceLevelPill`, `CallOrb`, `CallControlButton`, `CallStrip`, `CallCard`, `CallProblemScreen`, `useCallColors`, `DEFAULT_CALL_LABELS`.

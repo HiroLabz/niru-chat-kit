@@ -25,6 +25,7 @@ export * from "./hooks/use-run-ids";
 export * from "./hooks/use-stream-failure";
 export * from "./hooks/use-stream-transcript";
 export * from "./hooks/use-suggestion-fill";
+export * from "./hooks/use-recorded-speech";
 export * from "./hooks/use-speech-input";
 export * from "./markdown/math-delimiters";
 export * from "./markdown/math-plugins";

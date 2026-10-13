@@ -15,6 +15,7 @@ import { ChatHistorySidebar, type ChatHistorySidebarProps } from "./chat-history
 import type { DataAttributes } from "./data-attributes";
 import { Composer, type ComposerAttachment } from "./composer";
 import type { ComposerToggle } from "./composer-toggles";
+import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import { ComposerPills } from "./composer-pills";
 import { columnPadding, Conversation, type ConversationProps } from "./conversation";
 import type { QuestionCardLabels } from "./question-card";
@@ -87,8 +88,8 @@ export type FullChatProps = {
   rootProps?: Partial<BoxProps> & DataAttributes;
   /** Optional looks, all off by default; see `ChatLook`. */
   look?: ChatLook;
-  /** Shows the composer's mic where the browser supports speech recognition; see `Composer`. */
-  voice?: boolean;
+  /** Shows the composer's mic; `true` for browser speech recognition, or `ComposerVoiceOptions` to record and transcribe. See `Composer`. */
+  voice?: boolean | ComposerVoiceOptions;
   voiceLang?: string;
   /** On/off chips in the composer's action row; see `Composer`. */
   toggles?: ComposerToggle[];

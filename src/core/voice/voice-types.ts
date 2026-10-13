@@ -68,6 +68,12 @@ export interface VoiceSnapshot {
   step: VoiceJoinStep | null;
   muted: boolean;
   /**
+   * A short sentence the app supplies about what the assistant is doing, such as "Searching the web"
+   * or "Making a picture". Shown under the status while the phase is `thinking` (and `speaking`, if
+   * you still set one). Null or absent: no activity. Keep it free of message text and file names.
+   */
+  activity?: string | null;
+  /**
    * The microphones to choose from, when the transport can list them. Optional: a session that
    * leaves it out simply has no picker. An empty list means none was found.
    */

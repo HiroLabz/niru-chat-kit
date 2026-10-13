@@ -1,0 +1,57 @@
+import type { TranscribeAudio } from "../../core/hooks/use-recorded-speech";
+
+/** Every word of the recording voice input. Override any of them with `voice={{ labels }}`. */
+export interface ComposerVoiceLabels {
+  /** The mic button when idle. */
+  start: string;
+  /** The mic button while recording: stops and transcribes. */
+  stop: string;
+  /** Discards the recording or the pending transcription. */
+  cancel: string;
+  /** While the browser asks for the microphone. */
+  asking: string;
+  /** While recording. The elapsed time follows it on screen. */
+  recording: string;
+  /** While the app transcribes. */
+  transcribing: string;
+  permissionDenied: string;
+  noMicrophone: string;
+  microphoneBusy: string;
+  recordingFailed: string;
+  /** Shown when `transcribe` rejects without a message of its own. */
+  transcriptionFailed: string;
+  /** Shown when the transcription is empty. Not an error: nothing is added. */
+  nothingHeard: string;
+}
+
+export const DEFAULT_COMPOSER_VOICE_LABELS: ComposerVoiceLabels = {
+  start: "Record a voice message",
+  stop: "Stop and transcribe",
+  cancel: "Cancel recording",
+  asking: "Waiting for the microphone",
+  recording: "Recording",
+  transcribing: "Turning your voice into text",
+  permissionDenied: "Microphone access was blocked. Allow it in your settings, then try again.",
+  noMicrophone: "No microphone was found.",
+  microphoneBusy: "The microphone is in use by something else.",
+  recordingFailed: "The recording stopped. Try again.",
+  transcriptionFailed: "Transcription failed. Try again.",
+  nothingHeard: "Nothing was heard. Try again.",
+};
+
+/**
+ * The composer's `voice` prop as an object. Without `transcribe` it is the browser's speech
+ * recognition, as `voice` set to true. With `transcribe` the mic records and hands the audio to the app.
+ */
+export interface ComposerVoiceOptions {
+  /** Turns the recording into text. Resolve with the text; reject with an Error whose message is plain words for the person. */
+  transcribe?: TranscribeAudio;
+  /** A `deviceId` to record from; null or absent: the default microphone. */
+  microphoneId?: string | null;
+  /** Recording stops by itself, and is transcribed, after this long. Default 120000. */
+  maxDurationMs?: number;
+  /** When set, the mic is shown disabled with this sentence as its tooltip and description (for example while a call uses the microphone). */
+  disabledReason?: string | null;
+  /** Words for each state; any key can be replaced. */
+  labels?: Partial<ComposerVoiceLabels>;
+}

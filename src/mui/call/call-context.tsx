@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { VoiceSession, VoiceSnapshot } from "../../core/voice/voice-types";
+import type { CallActivity } from "./call-activity";
 import type { CallColors } from "./call-colors";
 import type { CallTranslate } from "./call-labels";
 import type { MicrophonePicker } from "./call-microphone";
@@ -23,6 +24,8 @@ export interface CallContextValue {
   visual: CallVisual;
   agent: CallPerson;
   user: CallPerson;
+  /** What the assistant is doing, for the line under the status. */
+  activity: CallActivity;
   /** Null when nothing can select a microphone: no picker is drawn. */
   microphone: MicrophonePicker | null;
   menu?: ReactNode;
