@@ -39,3 +39,4 @@ export * from "./voice/use-local-media";
 export * from "./voice/fake-voice-script";
 export * from "./voice/fake-voice-session";
 export * from "./question";
+export * from "./slash-commands";

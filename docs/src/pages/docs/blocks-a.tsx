@@ -18,6 +18,7 @@ import {
   SuggestionPills,
   type ComposerAttachment,
   type ComposerToggle,
+  type SlashCommand,
 } from "@hiro/niru-chat-kit/mui";
 import { example } from "../../components/Example";
 import { C } from "../../components/Section";
@@ -159,6 +160,33 @@ function ComposerBasic() {
 }
 // #endregion
 
+// #region composer-slash-commands
+const MY_COMMANDS: SlashCommand[] = [
+  { id: "summarize", name: "summarize", description: "A short version of a text", insert: "Summarize the following in three bullet points:\n\n", group: "Your commands" },
+  { id: "translate", name: "translate", description: "Into another language", insert: "Translate this into French: ", keywords: ["language"], group: "Your commands" },
+  { id: "clear", name: "clear", description: "Empty the box", group: "Actions" },
+];
+
+function ComposerSlashCommands() {
+  const [draft, setDraft] = useState("");
+  const [log, setLog] = useState("Nothing picked yet");
+  return (
+    <Stack spacing={1} sx={{ pt: 14 }}>
+      <Composer
+        value={draft}
+        onChange={setDraft}
+        onSubmit={() => setDraft("")}
+        placeholder="Type / to see the commands"
+        commands={MY_COMMANDS}
+        onCommand={(command) => setLog(command.insert ? `Inserted ${command.name}` : `Ran the ${command.name} action`)}
+        onManageCommands={() => setLog("Opened the command editor")}
+      />
+      <Typography variant="caption">{log}</Typography>
+    </Stack>
+  );
+}
+// #endregion
+
 // #region composer-voice-toggles
 function ComposerVoiceAndToggles() {
   const [draft, setDraft] = useState("");
@@ -254,6 +282,7 @@ export const BLOCKS_A: Record<string, ComponentDoc> = {
     api: ["Composer", "ComposerSuggestionsList"],
     examples: [
       example(raw, "composer-basic", <ComposerBasic />, { title: "Attachments, settings, suggestions and a busy box", description: "Type to see suggestions. The second box shows the Stop button, which appears while a reply is running." }),
+      example(raw, "composer-slash-commands", <ComposerSlashCommands />, { title: "Slash commands", description: "Type / to open the list, keep typing to filter, then pick with the arrow keys and Enter or Tab, or with the mouse. Summarize and Translate fill the box; Clear is an action your onCommand runs. The last row calls onManageCommands.", height: 360 }),
       example(raw, "composer-voice-toggles", <ComposerVoiceAndToggles />, { title: "Voice, toggles and the More menu", description: "The microphone shows only in browsers that support speech recognition. Toggles are on/off chips, and the More button holds extra menu items." }),
       example(raw, "composer-voice-record", <ComposerRecording />, { title: "Voice input that records", description: "Pass voice as an object with transcribe. The mic records, shows the time and a level, and hands the audio to your function. Escape or the mic stops and transcribes; Cancel discards. The button below sets disabledReason." }),
       example(raw, "composer-call", <ComposerCall />, { title: "A call button", description: "onStartCall adds a round phone button right before Send. Leave the prop out while a call is running." }),

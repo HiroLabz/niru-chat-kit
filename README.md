@@ -161,7 +161,7 @@ Small parts, from `@hiro/niru-chat-kit/mui`:
 Ready-made blocks, from the same entry point:
 
 - `Conversation` shows the messages. `FullChat` combines messages, message box and history in one.
-- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`: the message box and suggestions.
+- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`, `SlashCommandMenu`: the message box, suggestions and the slash-command list.
 - `ChatEmptyState`, `ChatHistorySidebar`: the screen before the first message, and the list of past chats.
 - `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`: the parts of one reply.
 - `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: asking the person to approve, answer or edit. In `FullChat`, an agent's question is a `QuestionCard` in the thread (tap a suggested answer, press its number, or type in the normal message box); `InterruptPrompt` is the older bottom panel.
@@ -270,6 +270,27 @@ When the composer itself is narrower than 460 px (a side panel, for example) the
   toggles={[{ id: "web", label: "Search the web", icon: <PublicIcon />, active: web, onToggle: () => setWeb(!web) }]}
   moreActions={<MenuItem onClick={addPhoto}>Add a photo</MenuItem>} />
 ```
+
+## Slash commands
+
+Give `Composer` (or `FullChat`) a `commands` list and typing `/` as the first thing in the box opens a list above it, like in ChatGPT, Gemini and Claude. Typing filters it, ArrowUp and ArrowDown move the highlight, Enter or Tab pick, Escape closes it (it stays closed until the text changes), and the mouse works too. The kit ships no commands: your app supplies them, so your people can edit their own. A slash later in the text ("and/or", a URL, a path) never opens the list.
+
+A `SlashCommand` is `{ id, name, description?, keywords?, group?, insert?, disabled? }`. With `insert`, picking replaces the typed `/query` with that text (a prompt template) and puts the caret after it. Without `insert` the command is an action: the `/query` is removed and your `onCommand(command)` does the work. Disabled commands are shown but cannot be picked. `onManageCommands` adds a last row, labelled `manageCommandsLabel` (default "Edit commands"), that calls it and closes the list. Other optional props: `commandsLabel` (default "Commands") and `commandsEmptyText` (default "No matching commands"; with no match, Enter sends the message as usual). The input becomes an ARIA combobox and the list a listbox; focus stays in the box.
+
+```tsx
+const commands: SlashCommand[] = [
+  { id: "summarize", name: "summarize", description: "A short version", group: "Your commands",
+    insert: "Summarize the following in three bullet points:\n\n" },
+  { id: "clear", name: "clear", description: "Empty the box", group: "Actions" },
+];
+
+<Composer value={draft} onChange={setDraft} onSubmit={send}
+  commands={commands}
+  onCommand={(command) => { if (command.id === "clear") track("clear"); }}
+  onManageCommands={() => setEditorOpen(true)} />
+```
+
+The core has `slashQuery(text, caret)`, `matchSlashCommands(commands, query)` and `applySlashCommand(text, range, command)` if you build your own box.
 
 ## Tool input and output
 

@@ -5,6 +5,8 @@ export * from "./chat-history-sidebar";
 export * from "./composer";
 export * from "./composer-pills";
 export * from "./composer-suggestions";
+export * from "./slash-command-menu";
+export * from "./use-slash-commands";
 export * from "./saved-list";
 export * from "./conversation";
 export * from "./conversation-header";

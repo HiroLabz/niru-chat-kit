@@ -249,4 +249,33 @@ describe("FullChat", () => {
     expect(document.querySelector('[data-chat="composer-wrap"]')).toBeNull();
     expect(screen.getByText("Which date?")).toBeInTheDocument();
   });
+
+  it("forwards the slash command props to its composer", () => {
+    const onCommand = vi.fn();
+    const onManageCommands = vi.fn();
+    const commands = [{ id: "sum", name: "summarize", insert: "Summarize: " }];
+    render(
+      <FullChat
+        stream={stream()}
+        agent={agent}
+        commands={commands}
+        onCommand={onCommand}
+        commandsLabel="Slash list"
+        onManageCommands={onManageCommands}
+        manageCommandsLabel="Change"
+        commandsEmptyText="None"
+      />
+    );
+    const box = screen.getByRole("combobox");
+    fireEvent.change(box, { target: { value: "/" } });
+    expect(screen.getByRole("listbox", { name: "Slash list" })).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Change"));
+    expect(onManageCommands).toHaveBeenCalledTimes(1);
+    fireEvent.change(box, { target: { value: "/x" } });
+    expect(screen.getByText("None")).toBeInTheDocument();
+    fireEvent.change(box, { target: { value: "/s" } });
+    fireEvent.keyDown(box, { key: "Enter" });
+    expect(box).toHaveValue("Summarize: ");
+    expect(onCommand).toHaveBeenCalledWith(commands[0]);
+  });
 });

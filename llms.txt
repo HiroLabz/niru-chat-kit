@@ -4,7 +4,7 @@
 
 You implement one `ChatTransport` (the only thing that knows your backend), pass it to `useChatStream`, and render the result with `FullChat` or with `Conversation` plus `Composer`. Wrap the chat in `ChatKitProvider`; colours come from tokens, never from hard-coded values.
 
-- [README](README.md): install, peer dependencies, quick start, tokens, what is in the box, voice input, call mode, history sidebar, message delete, composer toggles, tool input and output, images from bytes.
+- [README](README.md): install, peer dependencies, quick start, tokens, what is in the box, voice input, call mode, history sidebar, message delete, slash commands, composer toggles, tool input and output, images from bytes.
 - [llms-full.txt](llms-full.txt): every export of both entry points with a one-line purpose, key props and a minimal example.
 - [CHANGELOG](CHANGELOG.md): what changed, newest first.
 - [CONTRIBUTING](CONTRIBUTING.md): setup, test, build and the rules (two layers, files at most 400 lines, colours from tokens, heavy libraries stay dynamic imports).
@@ -22,7 +22,7 @@ You implement one `ChatTransport` (the only thing that knows your backend), pass
 ## MUI entry (`@hiro/niru-chat-kit/mui`)
 
 - Whole chat: `FullChat`, `Conversation`, `ConversationTurn`, `ChatHistorySidebar` (pin, Saved tab), `ConversationHeader`, `ChatEmptyState`.
-- Input: `Composer` (attachments, settings, `voice` (true, or `ComposerVoiceOptions` with `transcribe` to record), `toggles`, `moreActions`), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
+- Input: `Composer` (attachments, settings, `voice` (true, or `ComposerVoiceOptions` with `transcribe` to record), `toggles`, `moreActions`, `commands` (slash commands the app supplies)), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
 - Turn parts: `TurnActions`, `TurnTimeline`, `TurnSteps`, `Tool`, `Reasoning`, `Steps`, `ChainOfThought`, `Source`, `SourceList`, `MessageMedia` (images, videos and audio under a reply; core type `MediaItem`), `FeedbackBar`, `Image`, `Markdown`, `CodeBlock`, `JSXPreview`.
 - Human in the loop: `InterruptPrompt`, `ApprovalCard`, `QuestionCard` (the in-thread question with tappable answers), `MessageEditForm`.
 - Call mode: `CallStage` (`.Header`, `.Status`, `.Captions`, `.Preview`, `.Controls`), `VoiceLevelPill`, `CallOrb`, `CallControlButton`, `CallStrip`, `CallCard`, `CallProblemScreen`, `useCallColors`, `DEFAULT_CALL_LABELS`.

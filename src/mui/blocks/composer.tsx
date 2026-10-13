@@ -19,18 +19,14 @@
 
 import {
   useCallback,
-  useEffect,
   useId,
   useRef,
   useState,
   type ChangeEvent,
   type ClipboardEvent,
   type KeyboardEvent,
-  type ReactNode,
-  type Ref,
 } from "react";
 import Box from "@mui/material/Box";
-import type { BoxProps } from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -39,17 +35,20 @@ import AttachFileOutlinedIcon from "@mui/icons-material/AttachFileOutlined";
 import TuneOutlinedIcon from "@mui/icons-material/TuneOutlined";
 import { PromptInput } from "../primitives/prompt-input";
 import { useChatKitStyles } from "../theme";
-import type { DataAttributes } from "./data-attributes";
 import { ComposerSuggestionsList, useComposerSuggestions } from "./composer-suggestions";
-import { ComposerAttachmentList, type ComposerAttachment } from "./composer-attachments";
+import { SlashCommandMenu } from "./slash-command-menu";
+import { useSlashCommands } from "./use-slash-commands";
+import { useDismissOnOutsidePointer } from "./use-outside-pointer";
+import { ComposerAttachmentList } from "./composer-attachments";
+import type { ComposerProps } from "./composer-props";
 import { ComposerCallButton } from "./composer-call";
-import type { ComposerVoiceOptions } from "./composer-voice-labels";
 import { ComposerMicButton, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
-import { ComposerMoreMenu, ComposerToggles, type ComposerMoreContext, type ComposerToggle } from "./composer-toggles";
+import { ComposerMoreMenu, ComposerToggles } from "./composer-toggles";
 import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
 import { useNarrowBox } from "./use-narrow-box";
 
 export type { ComposerAttachment } from "./composer-attachments";
+export type { ComposerProps } from "./composer-props";
 export type { ComposerMoreContext, ComposerToggle } from "./composer-toggles";
 
 /** How far the field grows before it scrolls. */
@@ -72,77 +71,6 @@ const SETTINGS_CLIP_INSET = 1.25;
 const TOGGLES_INTO_MORE_BELOW = 460;
 
 const NO_SUGGESTIONS: string[] = [];
-
-export type ComposerProps = {
-  value: string;
-  onChange: (value: string) => void;
-  onSubmit: () => void;
-  onStop?: () => void;
-  busy?: boolean;
-  disabled?: boolean;
-  placeholder?: string;
-  settings?: ReactNode;
-  settingsLabel?: string;
-  attachments?: ComposerAttachment[];
-  onAttach?: (files: File[]) => void;
-  onRemoveAttachment?: (id: string) => void;
-  accept?: string;
-  /** Disables the paperclip only (drop and paste still call `onAttach`, so the host can say why nothing was added). */
-  attachDisabled?: boolean;
-  /** The paperclip's tooltip when it is disabled, or in place of "Attach a document". */
-  attachTooltip?: ReactNode;
-  /** The paperclip's accessible name; default "Attach a document". */
-  attachLabel?: string;
-  /** A short notice above the attachments (a rejected file, for example). */
-  attachmentNotice?: ReactNode;
-  trailing?: ReactNode;
-  /** Controls at the right edge of the actions row, just before Send (or Stop); the leading `trailing` controls stay at the left. */
-  endActions?: ReactNode;
-  maxRows?: number;
-  autoFocus?: boolean;
-  /** Candidates offered above the field while it has text (autocomplete). Empty or omitted: no list. */
-  suggestions?: string[];
-  /** Ref to the message textarea, so a host can focus it after filling the draft. */
-  inputRef?: Ref<HTMLTextAreaElement | HTMLInputElement>;
-  /** Extra attributes for the bordered surface, for example an analytics mask. */
-  rootProps?: Partial<BoxProps> & DataAttributes;
-  /**
-   * Shows a mic toggle that dictates into the box, where the browser supports speech recognition. Default: off.
-   * Pass an object with `transcribe` to record instead: the audio goes to your function and the text it returns
-   * is added to the box. See `ComposerVoiceOptions`.
-   */
-  voice?: boolean | ComposerVoiceOptions;
-  /** The dictation language as a BCP 47 tag, for example `en-PH`. Default: the browser's. */
-  voiceLang?: string;
-  /** On/off chips in the actions row (for example "Search the web"), after the attach button. */
-  toggles?: ComposerToggle[];
-  /** Extra controls (menu items) shown behind a "More" button in the actions row. */
-  moreActions?: ReactNode;
-  /**
-   * How the app's own row controls (`trailing`) appear when the composer is narrow. Omitted: `trailing` stays in the row.
-   * Given, and narrow: `trailing` leaves the row and these items are shown in the More menu, below the voice item and
-   * above the toggles and `moreActions`. Pass menu items, or a function that receives `{ closeMenu }` for an item
-   * that opens something else and should close the menu when it is done. Wide composers ignore it.
-   */
-  narrowMoreItems?: ReactNode | ((context: ComposerMoreContext) => ReactNode);
-  /** The "More" button's accessible name; default "More". The name gains ", N on" while N toggles inside are on. */
-  moreLabel?: string;
-  /** Shows a round call button in the actions row, just before Send. Omit it while a call is running. */
-  onStartCall?: () => void;
-  /** The call button's tooltip and accessible name; default "Start a call". */
-  callLabel?: string;
-  /** Greys the call button only. */
-  callDisabled?: boolean;
-  /**
-   * Set while the agent waits on an answer: a chip above the text says "Answering: <question>"
-   * and the placeholder becomes "Type your answer". The box, voice and attachments work as usual.
-   */
-  answering?: { question: string };
-  /** The chip's lead-in; default "Answering:". */
-  answeringLabel?: string;
-  /** The placeholder while `answering`; default "Type your answer". */
-  answeringPlaceholder?: string;
-};
 
 export function Composer({
   value,
@@ -181,6 +109,12 @@ export function Composer({
   answering,
   answeringLabel = "Answering:",
   answeringPlaceholder = "Type your answer",
+  commands,
+  onCommand,
+  commandsLabel = "Commands",
+  onManageCommands,
+  manageCommandsLabel = "Edit commands",
+  commandsEmptyText = "No matching commands",
 }: ComposerProps) {
   const { scheme } = useChatKitStyles();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -201,11 +135,18 @@ export function Composer({
     stopVoice();
     onSubmit();
   }, [stopVoice, onSubmit]);
+  const slash = useSlashCommands({ value, onChange, commands, onCommand, onManage: onManageCommands, inputRef });
+  // The slash list owns the box while it is open, so the autocomplete list stays out of its way.
   const composerSuggestions = useComposerSuggestions({
     value,
-    suggestions,
+    suggestions: slash.open ? NO_SUGGESTIONS : suggestions,
     onFill: onChange,
   });
+  /** The slash list gets each key first; what it leaves alone goes on to the suggestions. */
+  function handleFieldKeyDown(event: KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) {
+    slash.handleKeyDown(event);
+    if (!event.defaultPrevented) composerSuggestions.handleKeyDown(event);
+  }
 
   /** Escape closes the sheet here rather than reaching the panel that hosts the composer. */
   function handleEscape(event: KeyboardEvent<HTMLDivElement>) {
@@ -214,21 +155,9 @@ export function Composer({
     setSettingsOpen(false);
   }
 
-  // The floating suggestions list closes on a click anywhere outside the composer, like any
-  // combobox popup; a ref keeps this listener current without re-subscribing per keystroke.
-  const suggestionsRef = useRef(composerSuggestions);
-  useEffect(() => {
-    suggestionsRef.current = composerSuggestions;
-  }, [composerSuggestions]);
-  useEffect(() => {
-    if (!composerSuggestions.open) return;
-    function handlePointerDown(event: MouseEvent) {
-      if (composerRootRef.current?.contains(event.target as Node)) return;
-      suggestionsRef.current.close();
-    }
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [composerSuggestions.open]);
+  // Both floating lists close on a click anywhere outside the composer, like any combobox popup.
+  useDismissOnOutsidePointer(composerRootRef, composerSuggestions.open, composerSuggestions.close);
+  useDismissOnOutsidePointer(composerRootRef, slash.open, slash.close);
 
   function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -316,17 +245,18 @@ export function Composer({
         <PromptInput.Textarea
           placeholder={answering ? answeringPlaceholder : placeholder}
           autoFocus={autoFocus}
-          onKeyDown={composerSuggestions.handleKeyDown}
+          onKeyDown={handleFieldKeyDown}
           sx={{ px: 0.5, fontSize: 15, lineHeight: 1.55, color: "inherit", fontFamily: "inherit" }}
           slotProps={{
             input: {
               ...({ "data-chat": "composer-field" } as object),
-              inputRef,
+              inputRef: slash.inputRef,
               inputProps: {
                 "data-chat": "composer-input",
                 "aria-expanded": composerSuggestions.open,
                 "aria-controls": composerSuggestions.open ? composerSuggestions.listboxId : undefined,
                 "aria-activedescendant": composerSuggestions.activeId,
+                ...slash.inputProps,
               },
             },
           }}
@@ -401,6 +331,19 @@ export function Composer({
         ) : null}
       </PromptInput>
       <ComposerSuggestionsList controller={composerSuggestions} />
+      {slash.open ? (
+        <SlashCommandMenu
+          commands={slash.matches}
+          activeIndex={slash.activeIndex}
+          listboxId={slash.listboxId}
+          optionId={slash.optionId}
+          label={commandsLabel}
+          emptyText={commandsEmptyText}
+          manageLabel={slash.hasManage ? manageCommandsLabel : undefined}
+          onPick={slash.pick}
+          onHighlight={slash.highlight}
+        />
+      ) : null}
     </Box>
   );
 }

@@ -6,6 +6,7 @@ import Button from "@mui/material/Button";
 import type { BoxProps } from "@mui/material/Box";
 import { useSuggestionFill } from "../../core/hooks/use-suggestion-fill";
 import { isQuestionInterrupt } from "../../core/question";
+import type { SlashCommand } from "../../core/slash-commands";
 import type { AgentStreamStatus, ChatMessage, ChatTurnActions, Interrupt } from "../../core/types";
 import { FileUpload } from "../primitives/file-upload";
 import { SystemMessage } from "../primitives/system-message";
@@ -102,6 +103,18 @@ export type FullChatProps = {
   onStartCall?: () => void;
   callLabel?: string;
   callDisabled?: boolean;
+  /** Slash commands offered when the person types `/` in the box; see `Composer`. */
+  commands?: SlashCommand[];
+  /** Called after a command is picked; see `Composer`. */
+  onCommand?: (command: SlashCommand) => void;
+  /** The command list's accessible name; see `Composer`. */
+  commandsLabel?: string;
+  /** Adds a last "Edit commands" row to the list; see `Composer`. */
+  onManageCommands?: () => void;
+  /** That row's text; see `Composer`. */
+  manageCommandsLabel?: string;
+  /** Said when no command matches; see `Composer`. */
+  commandsEmptyText?: string;
   /** Rendered directly above the composer (or the interrupt card), inside the composer column, for example a `CallStrip`. */
   aboveComposer?: ReactNode;
   /**
@@ -161,6 +174,12 @@ export function FullChat({
   onStartCall,
   callLabel,
   callDisabled,
+  commands,
+  onCommand,
+  commandsLabel,
+  onManageCommands,
+  manageCommandsLabel,
+  commandsEmptyText,
   aboveComposer,
   decideAnswer,
   decideLabel,
@@ -345,6 +364,12 @@ export function FullChat({
                 onStartCall={onStartCall}
                 callLabel={callLabel}
                 callDisabled={callDisabled}
+                commands={commands}
+                onCommand={onCommand}
+                commandsLabel={commandsLabel}
+                onManageCommands={onManageCommands}
+                manageCommandsLabel={manageCommandsLabel}
+                commandsEmptyText={commandsEmptyText}
               />
             </Box>
           )}
