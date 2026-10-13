@@ -114,8 +114,9 @@ describe("SourceList long titles", () => {
     expect(link).toHaveStyle({ maxWidth: "240px", whiteSpace: "nowrap" });
   });
 
-  it("truncates a long document chip label too", () => {
+  it("wraps a long document chip label so it reads in full", () => {
     render(<SourceList citations={[{ ...DOCUMENT_CITATION, label: LONG }]} />);
-    expect(screen.getByTitle(LONG)).toHaveStyle({ maxWidth: "240px" });
+    expect(screen.getByTitle(LONG)).toHaveStyle({ maxWidth: "100%", height: "auto" });
+    expect(screen.getByText(LONG)).toHaveStyle({ whiteSpace: "normal", overflowWrap: "anywhere" });
   });
 });

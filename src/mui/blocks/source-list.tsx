@@ -23,13 +23,13 @@ function dedupeCitations(citations: Citation[]): Citation[] {
   return deduped;
 }
 
-/** Long titles truncate with an ellipsis past this width; the full title stays in the hover card and `title`. */
+/** Long web titles truncate with an ellipsis past this width; the full title stays in the hover card and `title`. */
 const SOURCE_CHIP_MAX_WIDTH = 240;
 
 /**
  * Compact "Sources" row rendered under an assistant message. Document citations render as
  * plain chips labeled with `citation.label`: they carry no URL, so there is nothing to
- * hover-card or link out to. Web citations render as a `Source` chip: clicking opens
+ * hover-card or link out to, and a long label wraps inside the chip so it reads in full. Web citations render as a `Source` chip: clicking opens
  * `citation.url` in a new tab, hovering or focusing shows a card with the title and host.
  * Renders nothing when there are no citations.
  */
@@ -80,7 +80,14 @@ export function SourceList({ citations }: { citations?: Citation[] | null }) {
             label={citation.label}
             title={citation.label}
             data-chat="source"
-            sx={scheme((c) => ({ maxWidth: SOURCE_CHIP_MAX_WIDTH, color: c.text, borderColor: c.border }))}
+            sx={scheme((c) => ({
+              maxWidth: "100%",
+              height: "auto",
+              minHeight: 24,
+              color: c.text,
+              borderColor: c.border,
+              "& .MuiChip-label": { whiteSpace: "normal", overflowWrap: "anywhere", py: 0.25 },
+            }))}
           />
         )
       )}
