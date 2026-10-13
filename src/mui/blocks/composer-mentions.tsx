@@ -27,7 +27,13 @@ import { useChatKitStyles } from "../theme";
 
 type InputElement = HTMLTextAreaElement | HTMLInputElement;
 
-const CARET_EVENTS = ["select", "keyup", "click", "input", "focus"] as const;
+/**
+ * Events after which the caret may have moved without the text changing. NOT `input`: a state update from a native `input`
+ * listener is flushed before React's own change handler runs, React then writes the old text back into the field, sees no
+ * change, and the typed character is lost (seen live: real key presses dropped characters). A text change is followed
+ * through the `value` prop instead.
+ */
+const CARET_EVENTS = ["select", "keyup", "click", "focus"] as const;
 
 export type MentionsController = {
   open: boolean;
@@ -82,9 +88,13 @@ export function useMentions({
   const activeIndex = !open || !matches.length ? -1 : chosen?.key === key && chosen.index < matches.length ? chosen.index : 0;
   const optionId = useCallback((index: number) => `${listboxId}-option-${index}`, [listboxId]);
 
+  const latestValue = useRef(value);
+  latestValue.current = value;
   const sync = useCallback(() => {
     const node = input.current;
-    if (node && typeof node.selectionStart === "number") setCaret(node.selectionStart);
+    // While the field holds text React has not taken yet, a re-render would write the old text back: wait for the value to arrive.
+    if (!node || node.value !== latestValue.current) return;
+    if (typeof node.selectionStart === "number") setCaret(node.selectionStart);
   }, []);
 
   useLayoutEffect(() => {
