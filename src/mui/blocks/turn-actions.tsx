@@ -105,15 +105,15 @@ export function TurnActions({
   const isUser = message.role === "user";
   const onCopy = actions.onCopy;
   // Copy needs only the text, so a surface whose replies carry no server id (the public
-  // widget) still gets it; every other control below is keyed on that id.
-  const copyAction =
-    isUser || !message.text
-      ? null
-      : onCopy
-        ? <TurnCopyButton message={message} onCopy={onCopy} />
-        : serverId
-          ? (actions.renderCopy?.(message) ?? null)
-          : null;
+  // widget) still gets it; every other control below is keyed on that id. A person's own
+  // message gets the plain Copy button too (a surface's custom `renderCopy` is for replies).
+  const copyAction = !message.text
+    ? null
+    : onCopy
+      ? <TurnCopyButton message={message} onCopy={onCopy} />
+      : serverId && !isUser
+        ? (actions.renderCopy?.(message) ?? null)
+        : null;
   const extraActions = isUser || !message.text ? null : (actions.renderExtraActions?.(message) ?? null);
   const onSave = actions.onSave;
   // Saving needs only the text, like Copy; user messages are left out to keep the row about replies.

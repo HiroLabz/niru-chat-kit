@@ -121,7 +121,7 @@ describe("TurnActions", () => {
     );
   });
 
-  it("offers Edit on a question, not Copy or thumbs", () => {
+  it("offers Edit and Copy on a question, not thumbs", () => {
     const onStartEdit = vi.fn();
     render(
       <TurnActions
@@ -132,15 +132,18 @@ describe("TurnActions", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: TURN_ACTION_COPY.edit }));
     expect(onStartEdit).toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: TURN_ACTION_COPY.copy })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: TURN_ACTION_COPY.copy })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: FEEDBACK_COPY.up })).not.toBeInTheDocument();
   });
 
-  it("shows nothing for a turn still running, or a question the server has no id for yet", () => {
-    const handlers = actions({ onCopy: vi.fn(), onRegenerate: vi.fn() });
+  it("shows nothing for a turn still running; a question the server has no id for yet gets Copy only", () => {
+    const handlers = actions({ onCopy: vi.fn(), onEdit: vi.fn(), onRegenerate: vi.fn() });
     const { container, rerender } = render(
       <TurnActions message={{ ...question, serverId: undefined }} actions={handlers} onStartEdit={vi.fn()} />
     );
+    expect(screen.getByRole("button", { name: TURN_ACTION_COPY.copy })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: TURN_ACTION_COPY.edit })).not.toBeInTheDocument();
+    rerender(<TurnActions message={{ ...question, pending: true }} actions={handlers} onStartEdit={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
     rerender(<TurnActions message={{ ...reply, pending: true }} actions={handlers} onStartEdit={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
