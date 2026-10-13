@@ -73,7 +73,10 @@ export function useMentions({
   const range = mentions && !suppressed ? mentionQuery(value, Math.min(caret, value.length)) : null;
   const matches = useMemo(() => (range && mentions ? matchMentions(mentions, range.query) : []), [mentions, range?.query]); // eslint-disable-line react-hooks/exhaustive-deps
   // Spaces are allowed while something still matches (a label can hold spaces); with nothing left to match they end it.
-  const open = range !== null && closedAtValue !== value && (matches.length > 0 || !/\s/.test(range.query));
+  // A whole label followed by a space is a finished mention (typed out, or put in by the app): the list stays closed.
+  const finished =
+    range !== null && /\s$/.test(range.query) && (mentions ?? []).some((item) => item.label.toLowerCase() === range.query.trimEnd().toLowerCase());
+  const open = range !== null && !finished && closedAtValue !== value && (matches.length > 0 || !/\s/.test(range.query));
 
   const key = `${range?.query ?? ""}\u0000${matches.map((item) => item.id).join("\u0000")}`;
   const activeIndex = !open || !matches.length ? -1 : chosen?.key === key && chosen.index < matches.length ? chosen.index : 0;

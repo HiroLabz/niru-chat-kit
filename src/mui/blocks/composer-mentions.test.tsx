@@ -65,6 +65,15 @@ describe("Composer mentions", () => {
     expect(screen.getByText("No matches")).toBeInTheDocument();
   });
 
+  it("stays closed for a finished mention the app put in (seen live: the list popped open after a pick from the Add menu)", () => {
+    render(<Harness start="@Read file " />);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    type("@Read file ");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    type("@Read fil");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+  });
+
   it("shows custom empty and loading words", () => {
     render(<Harness mentions={[]} mentionsEmptyText="Nothing here" mentionsLabel="Tools" />);
     type("@");
