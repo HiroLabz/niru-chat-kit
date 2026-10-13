@@ -132,7 +132,7 @@ export type FullChatProps = {
 } & Pick<
   ComposerProps,
   // The composer's opt-in extras, passed straight through; each is documented on `Composer`.
-  "addMenu" | "chips" | "pastedTexts" | "onPasteLongText" | "onRemovePastedText" | "onShowPastedText" | "longPasteThreshold" | "mentions" | "onMention" | "mentionsLabel" | "mentionsEmptyText" | "mentionsLoading" | "approvalMode" | "extrasLabels"
+  "addMenu" | "chips" | "pastedTexts" | "onPasteLongText" | "onRemovePastedText" | "onShowPastedText" | "longPasteThreshold" | "mentions" | "onMention" | "mentionsLabel" | "mentionsEmptyText" | "mentionsLoading" | "approvalMode" | "extrasLabels" | "endLeading"
 >;
 
 /**
@@ -205,6 +205,7 @@ export function FullChat({
   mentionsEmptyText,
   mentionsLoading,
   approvalMode,
+  endLeading,
   extrasLabels,
 }: FullChatProps) {
   const { scheme } = useChatKitStyles();
@@ -406,6 +407,7 @@ export function FullChat({
                 mentionsEmptyText={mentionsEmptyText}
                 mentionsLoading={mentionsLoading}
                 approvalMode={approvalMode}
+                endLeading={endLeading}
                 extrasLabels={extrasLabels}
               />
             </Box>

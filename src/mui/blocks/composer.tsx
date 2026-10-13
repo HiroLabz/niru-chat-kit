@@ -103,6 +103,7 @@ export function Composer({
   attachmentNotice,
   trailing,
   endActions,
+  endLeading,
   maxRows = MAX_FIELD_ROWS,
   autoFocus = false,
   suggestions = NO_SUGGESTIONS,
@@ -379,6 +380,8 @@ export function Composer({
           <Box sx={{ flexGrow: 1 }} />
 
           {endActions}
+
+          {foldTrailing ? null : endLeading}
 
           <ComposerCallButton onStartCall={onStartCall} label={callLabel} disabled={disabled || callDisabled} />
 

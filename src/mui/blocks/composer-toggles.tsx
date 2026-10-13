@@ -24,13 +24,42 @@ export type ComposerToggle = {
   active: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  /**
+   * Draws the toggle as a round icon button (the size of the plus button) instead of a labelled pill. The label stays
+   * its accessible name and tooltip; `aria-pressed` and the accent tint show the state. In the narrow More menu it is
+   * still a labelled checkable item.
+   */
+  iconOnly?: boolean;
 };
 
 export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle[]; disabled?: boolean }) {
   const { scheme } = useChatKitStyles();
   return (
     <>
-      {toggles.map((toggle) => (
+      {toggles.map((toggle) =>
+        toggle.iconOnly ? (
+        <Tooltip key={toggle.id} title={toggle.label}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label={toggle.label}
+              aria-pressed={toggle.active}
+              data-chat="toggle"
+              disabled={disabled || toggle.disabled}
+              onClick={toggle.onToggle}
+              sx={scheme((c) => ({
+                border: 1,
+                borderColor: toggle.active ? alpha(c.accent, 0.7) : c.border,
+                color: toggle.active ? c.accent : c.mutedText,
+                bgcolor: toggle.active ? alpha(c.accent, 0.16) : "transparent",
+                "&:hover": { bgcolor: alpha(c.accent, toggle.active ? 0.24 : 0.12) },
+              }))}
+            >
+              {toggle.icon}
+            </IconButton>
+          </span>
+        </Tooltip>
+        ) : (
         <Chip
           key={toggle.id}
           size="small"
@@ -48,7 +77,8 @@ export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle
             "& .MuiChip-icon": { color: "inherit" },
           }))}
         />
-      ))}
+        )
+      )}
     </>
   );
 }

@@ -10,6 +10,7 @@
 import { useId, useState, type ReactNode } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
@@ -45,6 +46,12 @@ export type ComposerApprovalMode = {
   disabledReason?: string;
   /** The start of the button's accessible name, "<buttonLabel>: <current label>", in place of the heading. */
   buttonLabel?: string;
+  /**
+   * Draws the row button as a round icon button (the size of the plus button) showing only the current option's icon.
+   * The accessible name stays "<heading>: <label>", the tooltip is the current option's label, and a `warning` tone
+   * still colours the icon. An option without an icon shows its label as before. The menu is unchanged.
+   */
+  iconOnly?: boolean;
 };
 
 function useTone() {
@@ -61,10 +68,27 @@ export function ComposerApprovalButton({ approval, heading, disabled }: { approv
   const locked = Boolean(disabled || approval.disabled);
   const name = `${approval.buttonLabel ?? heading}: ${current?.label ?? approval.value}`;
   const close = () => setAnchor(null);
+  const asIcon = Boolean(approval.iconOnly && current?.icon);
+  const tip = locked ? (approval.disabledReason ?? "") : asIcon ? (current?.label ?? "") : "";
   return (
     <>
-      <Tooltip title={locked ? (approval.disabledReason ?? "") : ""}>
+      <Tooltip title={tip}>
         <span>
+          {asIcon && current ? (
+            <IconButton
+              size="small"
+              aria-label={name}
+              aria-haspopup="menu"
+              aria-expanded={Boolean(anchor)}
+              aria-controls={anchor ? menuId : undefined}
+              data-chat="approval-mode"
+              disabled={locked}
+              onClick={(event) => setAnchor(event.currentTarget)}
+              sx={scheme((c) => ({ border: 1, borderColor: c.border, color: current.tone === "warning" ? c.warning : c.mutedText, "&:hover": { bgcolor: c.muted } }))}
+            >
+              {current.icon}
+            </IconButton>
+          ) : (
           <Button
             size="small"
             color="inherit"
@@ -80,6 +104,7 @@ export function ComposerApprovalButton({ approval, heading, disabled }: { approv
           >
             {current?.label ?? approval.value}
           </Button>
+          )}
         </span>
       </Tooltip>
       <Menu

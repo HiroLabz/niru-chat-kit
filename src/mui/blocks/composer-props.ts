@@ -34,9 +34,16 @@ export type ComposerProps = {
   attachLabel?: string;
   /** A short notice above the attachments (a rejected file, for example). */
   attachmentNotice?: ReactNode;
+  /** App controls in the row after the toggles. Narrow: see `narrowMoreItems`. */
   trailing?: ReactNode;
   /** Controls at the right edge of the actions row, just before Send (or Stop); the leading `trailing` controls stay at the left. */
   endActions?: ReactNode;
+  /**
+   * Content in the end group of the actions row, immediately before the call button, the voice input (with
+   * `voicePlacement="end"`) and Send, after `endActions`. For an app control that belongs beside the microphone, such as a
+   * model picker. On a narrow composer it follows `trailing`: with `narrowMoreItems` given it leaves the row, otherwise it stays.
+   */
+  endLeading?: ReactNode;
   maxRows?: number;
   autoFocus?: boolean;
   /** Candidates offered above the field while it has text (autocomplete). Empty or omitted: no list. */
