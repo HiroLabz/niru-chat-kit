@@ -20,6 +20,8 @@ import { useChatKitStyles } from "../theme";
 /** About this many rows show before the list scrolls. */
 const MAX_VISIBLE_ROWS = 8;
 const ROW_HEIGHT_EM = 2.5;
+/** The list's padding, in theme spacing units (8 px each). */
+const LIST_PADDING = 0.5;
 
 export type SlashCommandMenuProps = {
   /** The matching commands, in list order. */
@@ -135,7 +137,7 @@ export function SlashCommandMenu({
         bottom: "100%",
         mb: 1,
         zIndex: 1,
-        p: 0.5,
+        p: LIST_PADDING,
         maxHeight: `${MAX_VISIBLE_ROWS * ROW_HEIGHT_EM + 1}em`,
         overflowY: "auto",
       }))}
@@ -147,20 +149,33 @@ export function SlashCommandMenu({
         </Typography>
       ) : null}
       {manageLabel ? (
+        // Stays at the bottom while the commands scroll, so a long list never hides it. The
+        // negative offset covers the list's own padding, which rows would otherwise show through.
         <Box
-          id={optionId(commands.length)}
-          role="option"
-          aria-selected={activeIndex === commands.length}
-          onMouseEnter={() => onHighlight(commands.length)}
-          onClick={() => onPick(commands.length)}
-          sx={[
-            rowSx(commands.length, false),
-            scheme((c) => (commands.length ? { mt: 0.5, borderTop: 1, borderColor: c.border, borderRadius: 0 } : {})),
-          ]}
+          role="presentation"
+          sx={scheme((c) => ({
+            position: "sticky",
+            bottom: LIST_PADDING * -8,
+            pb: LIST_PADDING,
+            mb: -LIST_PADDING,
+            bgcolor: c.surface,
+          }))}
         >
-          <Typography component="span" variant="body2" sx={scheme((c) => ({ color: c.mutedText }))}>
-            {manageLabel}
-          </Typography>
+          <Box
+            id={optionId(commands.length)}
+            role="option"
+            aria-selected={activeIndex === commands.length}
+            onMouseEnter={() => onHighlight(commands.length)}
+            onClick={() => onPick(commands.length)}
+            sx={[
+              rowSx(commands.length, false),
+              scheme((c) => (commands.length ? { mt: 0.5, borderTop: 1, borderColor: c.border, borderRadius: 0 } : {})),
+            ]}
+          >
+            <Typography component="span" variant="body2" sx={scheme((c) => ({ color: c.mutedText }))}>
+              {manageLabel}
+            </Typography>
+          </Box>
         </Box>
       ) : null}
     </Paper>
