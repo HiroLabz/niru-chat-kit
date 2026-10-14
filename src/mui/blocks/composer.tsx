@@ -88,6 +88,7 @@ export function Composer({
   onChange,
   onSubmit,
   onStop,
+  running,
   busy = false,
   disabled = false,
   placeholder = "Send a message to start a chat",
@@ -388,7 +389,7 @@ export function Composer({
           {micAtEnd ? <ComposerMicButton voice={voice} disabled={disabled} placement="end" caret={!narrow} /> : null}
 
           <ComposerSendButton
-            busy={busy}
+            busy={Boolean(busy) || (Boolean(running) && !canSend)}
             onStop={onStop}
             canSend={canSend}
             onSend={submit}

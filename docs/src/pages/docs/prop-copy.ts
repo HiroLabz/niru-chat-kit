@@ -212,6 +212,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     onSubmit: "Called when someone presses Enter or Send.",
     onStop: "Called when someone presses Stop. The Stop button shows while busy is true.",
     busy: "Set to true while a reply is running. Stop replaces Send.",
+    running: "A turn is running while the box still takes text. Stop replaces Send while the box is empty; typing brings Send back to steer.",
     disabled: "Turns the message box off.",
     placeholder: "Hint text shown in the empty box.",
     settings: "Content for a settings panel that opens from a button inside the box.",

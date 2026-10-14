@@ -60,6 +60,11 @@ export type ConversationProps = {
   turnActions?: ChatTurnActions | null;
   /** Cancels the in-flight run; given, the typing row and a textless pending turn show a Stop button. */
   onStop?: () => void;
+  /**
+   * Whether Stop is offered in the transcript beside "Thinking" (default `true`). An app whose composer
+   * turns Send into Stop while a turn runs (`running` on `Composer`) sets it to `false`, so Stop is in one place.
+   */
+  stopInTranscript?: boolean;
   renderExtras?: (message: ChatMessage) => ReactNode;
   /** Blocks on the user's own turns, above the bubble; see `ConversationTurn`. */
   renderUserExtras?: (message: ChatMessage) => ReactNode;
@@ -126,6 +131,7 @@ export function Conversation({
   liveAvatar,
   turnActions,
   onStop,
+  stopInTranscript = true,
   renderExtras,
   renderUserExtras,
   footer,
@@ -241,6 +247,7 @@ export function Conversation({
               agentInitial={agentInitial}
               actions={turnActions}
               onStop={message.id === pendingId ? onStop : undefined}
+              stopHidden={!stopInTranscript}
               renderExtras={renderExtras}
               renderUserExtras={renderUserExtras}
               onDownloadFile={onDownloadFile}
@@ -257,7 +264,7 @@ export function Conversation({
           {/* `null` is a deliberate "no face": only an absent avatar falls back to the initial. */}
           {liveAvatar === undefined ? <Message.Avatar initial={agentInitial ?? "H"} /> : liveAvatar}
           <Message.Content from="assistant" data-chat-bubble={undefined}>
-            {onStop ? <ThinkingBar onStop={onStop} /> : <TypingDots />}
+            {onStop ? <ThinkingBar onStop={stopInTranscript ? onStop : undefined} /> : <TypingDots />}
           </Message.Content>
         </Message>
       ) : null}

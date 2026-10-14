@@ -28,24 +28,36 @@ export function AnswerBox({
 }) {
   const { scheme } = useChatKitStyles();
   return (
-    <Stack direction="row" spacing={1}>
+    // A question is answered in words, often a few lines: a roomy box with Answer under it, like a short reply.
+    <Stack spacing={1}>
       <TextField
         autoFocus={autoFocus}
-        size="small"
         fullWidth
+        multiline
+        minRows={3}
+        maxRows={12}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onKeyDown={(event) => {
+          // Enter answers, Shift+Enter starts a new line; an input method still composing keeps Enter.
+          if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+          event.preventDefault();
+          (event.currentTarget as HTMLElement).closest("form")?.requestSubmit();
+        }}
         placeholder={ANSWER_PLACEHOLDER}
+        slotProps={{ htmlInput: { "aria-label": ANSWER_PLACEHOLDER } }}
       />
-      <Button
-        type="submit"
-        variant="contained"
-        loading={pending}
-        disabled={pending || value.trim().length === 0}
-        sx={scheme((c) => ({ bgcolor: c.accent, color: c.accentContrast, "&:hover": { bgcolor: c.accent } }))}
-      >
-        {ANSWER_LABEL}
-      </Button>
+      <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
+        <Button
+          type="submit"
+          variant="contained"
+          loading={pending}
+          disabled={pending || value.trim().length === 0}
+          sx={scheme((c) => ({ bgcolor: c.accent, color: c.accentContrast, "&:hover": { bgcolor: c.accent } }))}
+        >
+          {ANSWER_LABEL}
+        </Button>
+      </Stack>
     </Stack>
   );
 }

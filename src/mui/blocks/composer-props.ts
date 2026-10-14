@@ -18,6 +18,11 @@ export type ComposerProps = {
   onSubmit: () => void;
   onStop?: () => void;
   busy?: boolean;
+  /**
+   * A turn is running while the box still takes text (steering). Send becomes Stop while the box is empty, and
+   * comes back as soon as the person types, so a message can still be sent to the running turn. Needs `onStop`.
+   */
+  running?: boolean;
   disabled?: boolean;
   placeholder?: string;
   settings?: ReactNode;

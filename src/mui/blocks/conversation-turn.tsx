@@ -67,6 +67,8 @@ export type ConversationTurnProps = {
    * typing dots become a `ThinkingBar` with a Stop button; omitted keeps the plain loader.
    */
   onStop?: () => void;
+  /** The turn shows "Thinking" without its Stop link (Stop lives in the composer). */
+  stopHidden?: boolean;
   /** An app's own blocks under the answer (a structured-output card, for example). Keep its identity stable: the turn is memoised. */
   renderExtras?: (message: ChatMessage) => ReactNode;
   /** An app's own blocks on the user's turn, drawn above the bubble (the files it sent). Keep its identity stable. */
@@ -100,6 +102,7 @@ export const ConversationTurn = memo(function ConversationTurn({
   avatar,
   actions,
   onStop,
+  stopHidden,
   renderExtras,
   renderUserExtras,
   onDownloadFile,
@@ -189,7 +192,7 @@ export const ConversationTurn = memo(function ConversationTurn({
           // to put a bubble around: a bubble plus an outlined Stop button read as chrome around
           // nothing. `ThinkingBar` renders as a plain row, padded to the bubble's own px/py so
           // its shimmering label starts exactly where bubble text would.
-          <ThinkingBar onStop={onStop} sx={{ px: 1.5, py: 1 }} />
+          <ThinkingBar onStop={stopHidden ? undefined : onStop} sx={{ px: 1.5, py: 1 }} />
         ) : (
           <Message.Content from={isUser ? "user" : "assistant"}>
             {showDots ? (
