@@ -26,58 +26,99 @@ export type ComposerToggle = {
   disabled?: boolean;
   /**
    * Draws the toggle as a round icon button (the size of the plus button) instead of a labelled pill. The label stays
-   * its accessible name and tooltip; `aria-pressed` and the accent tint show the state. In the narrow More menu it is
+   * its accessible name and tooltip; `aria-pressed`, a filled look and a check badge show the state. In the narrow More menu it is
    * still a labelled checkable item.
    */
   iconOnly?: boolean;
 };
 
-export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle[]; disabled?: boolean }) {
+const CHECK_BADGE = 14;
+
+function IconToggle({ toggle, disabled }: { toggle: ComposerToggle; disabled?: boolean }) {
   const { scheme } = useChatKitStyles();
+  return (
+    <Tooltip title={toggle.label}>
+      <span>
+        <Badge
+          overlap="circular"
+          invisible={!toggle.active}
+          data-chat="toggle-check"
+          badgeContent={<CheckIcon sx={{ fontSize: 10 }} />}
+          sx={scheme((c) => ({
+            "& .MuiBadge-badge": {
+              width: CHECK_BADGE,
+              height: CHECK_BADGE,
+              minWidth: CHECK_BADGE,
+              padding: 0,
+              bgcolor: c.surface,
+              color: c.accent,
+              border: 1,
+              borderColor: c.accent,
+            },
+          }))}
+        >
+          <IconButton
+            size="small"
+            aria-label={toggle.label}
+            aria-pressed={toggle.active}
+            data-chat="toggle"
+            data-state={toggle.active ? "on" : "off"}
+            disabled={disabled || toggle.disabled}
+            onClick={toggle.onToggle}
+            sx={scheme((c) => ({
+              border: 1,
+              borderStyle: toggle.active ? "solid" : "dashed",
+              borderColor: toggle.active ? c.accent : c.border,
+              color: toggle.active ? c.accentContrast : c.mutedText,
+              bgcolor: toggle.active ? c.accent : "transparent",
+              "&:hover": { bgcolor: toggle.active ? alpha(c.accent, 0.85) : alpha(c.accent, 0.12) },
+            }))}
+          >
+            {toggle.icon}
+          </IconButton>
+        </Badge>
+      </span>
+    </Tooltip>
+  );
+}
+
+function ChipToggle({ toggle, disabled }: { toggle: ComposerToggle; disabled?: boolean }) {
+  const { scheme } = useChatKitStyles();
+  return (
+    <Chip
+      size="small"
+      label={toggle.label}
+      icon={toggle.active ? <CheckIcon fontSize="small" data-chat="toggle-check" /> : <span style={{ display: "inline-flex" }}>{toggle.icon}</span>}
+      aria-pressed={toggle.active}
+      data-state={toggle.active ? "on" : "off"}
+      disabled={disabled || toggle.disabled}
+      onClick={toggle.onToggle}
+      variant={toggle.active ? "filled" : "outlined"}
+      sx={scheme((c) => ({
+        color: toggle.active ? c.accentContrast : c.mutedText,
+        borderColor: toggle.active ? c.accent : c.border,
+        bgcolor: toggle.active ? c.accent : "transparent",
+        "&:hover": { bgcolor: toggle.active ? alpha(c.accent, 0.85) : alpha(c.accent, 0.16) },
+        "& .MuiChip-icon": { color: "inherit" },
+      }))}
+    />
+  );
+}
+
+/**
+ * The toggles of the actions row. The state never rests on colour alone: on is a filled control with a check mark
+ * (a check badge on a round icon toggle, a check in place of the icon on a pill), off is an outline without one, and
+ * `aria-pressed` says the same to a screen reader.
+ */
+export function ComposerToggles({ toggles, disabled }: { toggles: ComposerToggle[]; disabled?: boolean }) {
   return (
     <>
       {toggles.map((toggle) =>
         toggle.iconOnly ? (
-        <Tooltip key={toggle.id} title={toggle.label}>
-          <span>
-            <IconButton
-              size="small"
-              aria-label={toggle.label}
-              aria-pressed={toggle.active}
-              data-chat="toggle"
-              disabled={disabled || toggle.disabled}
-              onClick={toggle.onToggle}
-              sx={scheme((c) => ({
-                border: 1,
-                borderColor: toggle.active ? alpha(c.accent, 0.7) : c.border,
-                color: toggle.active ? c.accent : c.mutedText,
-                bgcolor: toggle.active ? alpha(c.accent, 0.16) : "transparent",
-                "&:hover": { bgcolor: alpha(c.accent, toggle.active ? 0.24 : 0.12) },
-              }))}
-            >
-              {toggle.icon}
-            </IconButton>
-          </span>
-        </Tooltip>
+          <IconToggle key={toggle.id} toggle={toggle} disabled={disabled} />
         ) : (
-        <Chip
-          key={toggle.id}
-          size="small"
-          label={toggle.label}
-          icon={<span style={{ display: "inline-flex" }}>{toggle.icon}</span>}
-          aria-pressed={toggle.active}
-          disabled={disabled || toggle.disabled}
-          onClick={toggle.onToggle}
-          variant={toggle.active ? "filled" : "outlined"}
-          sx={scheme((c) => ({
-            color: toggle.active ? c.accent : c.mutedText,
-            borderColor: toggle.active ? alpha(c.accent, 0.7) : c.border,
-            bgcolor: toggle.active ? alpha(c.accent, 0.12) : "transparent",
-            "&:hover": { bgcolor: alpha(c.accent, 0.16) },
-            "& .MuiChip-icon": { color: "inherit" },
-          }))}
-        />
-        )
+          <ChipToggle key={toggle.id} toggle={toggle} disabled={disabled} />
+        ),
       )}
     </>
   );

@@ -101,6 +101,7 @@ export function Composer({
   attachDisabled = false,
   attachTooltip,
   attachLabel = "Attach a document",
+  onAttachClick,
   attachmentNotice,
   trailing,
   endActions,
@@ -148,6 +149,8 @@ export function Composer({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsId = useId();
   const fileInput = useRef<HTMLInputElement | null>(null);
+  const chooseFile = () => fileInput.current?.click();
+  const openAttach = () => (onAttachClick ? onAttachClick(chooseFile) : chooseFile());
   const composerRootRef = useRef<HTMLDivElement | null>(null);
   const extras = composerExtrasLabels(extrasLabels);
   const addLabel = addMenu?.label ?? extras.add;
@@ -158,7 +161,7 @@ export function Composer({
     attachDisabled,
     attachTooltip,
     uploadIcon: <AttachFileOutlinedIcon fontSize="small" />,
-    openFileChooser: () => fileInput.current?.click(),
+    openFileChooser: openAttach,
   });
   const narrow = useNarrowBox(composerRootRef, TOGGLES_INTO_MORE_BELOW);
   const foldToggles = narrow && Boolean(toggles?.length);
@@ -341,7 +344,7 @@ export function Composer({
                 aria-label={attachLabel}
                 data-chat="attach"
                 disabled={disabled || attachDisabled}
-                onClick={() => fileInput.current?.click()}
+                onClick={openAttach}
               >
                 <AttachFileOutlinedIcon fontSize="small" />
               </IconButton>

@@ -37,6 +37,12 @@ export type ComposerProps = {
   attachTooltip?: ReactNode;
   /** The paperclip's accessible name; default "Attach a document". */
   attachLabel?: string;
+  /**
+   * Runs when the paperclip or the Add menu's upload row is pressed, in place of opening the file chooser at once. It gets
+   * `chooseFile`, which opens the chooser; call it from a press of your own (a dialog that lists the accepted types and the
+   * size limit, say) so the browser still allows the chooser.
+   */
+  onAttachClick?: (chooseFile: () => void) => void;
   /** A short notice above the attachments (a rejected file, for example). */
   attachmentNotice?: ReactNode;
   /** App controls in the row after the toggles. Narrow: see `narrowMoreItems`. */

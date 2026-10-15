@@ -3,6 +3,7 @@ export * from "./approval-form-fields";
 export * from "./chat-empty-state";
 export * from "./chat-history-sidebar";
 export * from "./composer";
+export { ComposerAttachmentList } from "./composer-attachments";
 export * from "./composer-pills";
 export * from "./composer-suggestions";
 export * from "./slash-command-menu";

@@ -32,6 +32,23 @@ describe("Composer toggles and More menu", () => {
     expect(screen.getByRole("button", { name: /Search the web/ })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("shows a check mark and a filled look when on, none when off, for a pill and a round icon toggle", () => {
+    const make = (active: boolean, iconOnly: boolean) => (
+      <Composer {...base} toggles={[{ id: "web", label: "Search the web", icon: <span>i</span>, active, onToggle: vi.fn(), iconOnly }]} />
+    );
+    for (const iconOnly of [false, true]) {
+      const off = render(make(false, iconOnly));
+      expect(off.container.querySelector('[data-state="off"]')).not.toBeNull();
+      expect(off.container.querySelector('svg[data-testid="CheckIcon"]')).toBeNull();
+      off.unmount();
+      const on = render(make(true, iconOnly));
+      expect(on.container.querySelector('[data-state="on"]')).not.toBeNull();
+      expect(on.container.querySelector('svg[data-testid="CheckIcon"]')).not.toBeNull();
+      expect(screen.getByRole("button", { name: /Search the web/ })).toHaveAttribute("aria-pressed", "true");
+      on.unmount();
+    }
+  });
+
   it("disables a toggle and every toggle when the composer is disabled", () => {
     const toggles = [
       { id: "a", label: "Alpha", icon: null, active: false, onToggle: vi.fn(), disabled: true },
