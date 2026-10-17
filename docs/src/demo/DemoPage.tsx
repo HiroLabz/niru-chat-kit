@@ -8,7 +8,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
-import { ChatKitProvider, ConversationHeader, type ChatHistoryTab, type SavedItem } from "@hiro/niru-chat-kit/mui";
+import { ChatHistorySidebar, ChatKitProvider, ConversationHeader, type ChatHistoryTab, type SavedItem } from "@hiro/niru-chat-kit/mui";
 import type { ChatMessage } from "@hiro/niru-chat-kit";
 import { useMode } from "../site/mode";
 import { usePageTitle } from "../site/use-page-title";
@@ -117,23 +117,25 @@ export default function DemoPage() {
             highlightMessageId={highlightMessage}
             onSaveMessage={(message) => library.toggleSavedMessage(workspace.activeId, activeTitle, message.serverId ?? message.id, message.text)}
             isMessageSaved={isMessageSaved}
-            history={{
-              items: rows,
-              activeId: workspace.items.some((item) => item.id === workspace.activeId) ? workspace.activeId : null,
-              onSelect: workspace.select,
-              onNew: workspace.newChat,
-              identity: { name: "Demo agent", initial: "D", subtitle: "Scripted, runs in your browser" },
-              ...HISTORY_FEATURES,
-              onRename: workspace.rename,
-              onDelete: workspace.remove,
-              onPin: library.setPinned,
-              saved,
-              onOpenSaved: openSaved,
-              onUnsave: library.unsave,
-              tab,
-              onTabChange: setTab,
-              highlightId: highlightChat,
-            }}
+            sidebar={
+              <ChatHistorySidebar
+                items={rows}
+                activeId={workspace.items.some((item) => item.id === workspace.activeId) ? workspace.activeId : null}
+                onSelect={workspace.select}
+                onNew={workspace.newChat}
+                identity={{ name: "Demo agent", initial: "D", subtitle: "Scripted, runs in your browser" }}
+                {...HISTORY_FEATURES}
+                onRename={workspace.rename}
+                onDelete={workspace.remove}
+                onPin={library.setPinned}
+                saved={saved}
+                onOpenSaved={openSaved}
+                onUnsave={library.unsave}
+                tab={tab}
+                onTabChange={setTab}
+                highlightId={highlightChat}
+              />
+            }
           />
           <DemoCallLayer call={call} />
         </ChatKitProvider>

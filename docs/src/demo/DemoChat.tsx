@@ -10,7 +10,6 @@ import {
   FullChat,
   Image,
   Tool,
-  type ChatHistorySidebarProps,
   type ComposerAttachment,
 } from "@hiro/niru-chat-kit/mui";
 import type { ComposerToggle } from "@hiro/niru-chat-kit/mui";
@@ -23,7 +22,8 @@ const NO_STARTERS: string[] = [];
 
 type Props = {
   conversation: DemoConversation;
-  history?: ChatHistorySidebarProps;
+  /** The conversation list, drawn beside the chat; the page passes a ChatHistorySidebar. */
+  sidebar?: ReactNode;
   starters?: string[];
   /** Called with the first question once the conversation has one, so the sidebar can list it. */
   onFirstMessage?: (id: string, question: string) => void;
@@ -72,7 +72,7 @@ const copyText = async (text: string) => {
  * One demo conversation: `useChatStream` over the conversation's replay transport, drawn by
  * `FullChat`. Mount it with `key={conversation.id}` so switching conversations starts clean.
  */
-export function DemoChat({ conversation, history, starters = STARTERS, onFirstMessage, greeting, callCards, onCallAgain, onStartCall, aboveComposer, header, highlightMessageId, onSaveMessage, isMessageSaved }: Props) {
+export function DemoChat({ conversation, sidebar, starters = STARTERS, onFirstMessage, greeting, callCards, onCallAgain, onStartCall, aboveComposer, header, highlightMessageId, onSaveMessage, isMessageSaved }: Props) {
   const { transport } = conversation;
   const reopened = useMemo(() => transport.snapshot(), [transport]);
   const [files, setFiles] = useState<ComposerAttachment[]>([]);
@@ -161,7 +161,7 @@ export function DemoChat({ conversation, history, starters = STARTERS, onFirstMe
       renderAvatar={(size) => <AgentAvatar avatar={{ kind: "preset", preset_id: "hiro-02" }} name="Demo agent" size={size} />}
       greeting={greeting ?? "Hi, I am a scripted demo agent. Pick a suggestion below and watch what the kit does."}
       starters={starters.length ? starters : NO_STARTERS}
-      history={history}
+      sidebar={sidebar}
       header={header}
       highlightMessageId={highlightMessageId}
       attachments={files}

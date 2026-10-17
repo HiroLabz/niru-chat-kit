@@ -104,4 +104,22 @@ describe("FileUpload", () => {
     fireEvent.dragEnter(screen.getByText("transcript").parentElement as HTMLElement);
     expect(screen.getByText("transcript").parentElement).toContainElement(screen.getByText("Drop here"));
   });
+
+  it("keeps a zone lit while a drag moves between its children, and drops it on leave", () => {
+    render(
+      <FileUpload scope="zone" onFilesAdded={vi.fn()}>
+        <div>transcript</div>
+        <div>composer</div>
+        <FileUpload.Content>Drop here</FileUpload.Content>
+      </FileUpload>
+    );
+    const transcript = screen.getByText("transcript");
+    const composer = screen.getByText("composer");
+    fireEvent.dragEnter(transcript);
+    fireEvent.dragEnter(composer);
+    fireEvent.dragLeave(transcript);
+    expect(screen.getByText("Drop here")).toBeInTheDocument();
+    fireEvent.dragLeave(composer);
+    expect(screen.queryByText("Drop here")).toBeNull();
+  });
 });

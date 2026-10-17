@@ -171,19 +171,24 @@ export function FileUpload({
     );
   }
 
+  // Entering a child fires dragenter on it before dragleave on the one left, so the zone counts
+  // enters and leaves and is "over" while the count is above zero.
   function handleDragEnter(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     if (disabled) return;
+    dragCounter.current += 1;
     setDragging(true);
   }
 
   function handleDragLeave(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
-    setDragging(false);
+    dragCounter.current = Math.max(0, dragCounter.current - 1);
+    if (dragCounter.current === 0) setDragging(false);
   }
 
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
+    dragCounter.current = 0;
     setDragging(false);
     if (disabled) return;
     addFiles(event.dataTransfer?.files ?? []);

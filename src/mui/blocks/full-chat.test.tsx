@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { ChatHistorySidebar } from "./chat-history-sidebar";
 import { FullChat, type FullChatStream } from "./full-chat";
 
 function stream(overrides: Partial<FullChatStream> = {}): FullChatStream {
@@ -180,13 +181,13 @@ describe("FullChat", () => {
     expect(current.stop).toHaveBeenCalled();
   });
 
-  it("adds the conversation list beside the chat when history is supplied", () => {
+  it("draws the sidebar node beside the chat", () => {
     const onSelect = vi.fn();
     render(
       <FullChat
         stream={stream()}
         agent={agent}
-        history={{ items: [{ id: "c1", title: "Earlier chat" }], activeId: null, onSelect, onNew: vi.fn() }}
+        sidebar={<ChatHistorySidebar items={[{ id: "c1", title: "Earlier chat" }]} activeId={null} onSelect={onSelect} onNew={vi.fn()} />}
       />
     );
     fireEvent.click(screen.getByText("Earlier chat"));

@@ -266,7 +266,7 @@ The kit only draws and reports. Your app keeps what is pinned and saved, and pas
   agent={agent}
   header={<ConversationHeader title={title} pinned={pinned} onPinChange={setPinned} saved={chatSaved} onSaveChange={setChatSaved} />}
   highlightMessageId={openedMessageId}
-  history={{ items, activeId, onSelect, onNew, onPin, saved, onOpenSaved, onUnsave, highlightId }}
+  sidebar={<ChatHistorySidebar items={items} activeId={activeId} onSelect={onSelect} onNew={onNew} onPin={onPin} saved={saved} onOpenSaved={onOpenSaved} onUnsave={onUnsave} highlightId={highlightId} />}
 />
 ```
 
