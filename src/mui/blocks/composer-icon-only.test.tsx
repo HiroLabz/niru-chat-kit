@@ -110,19 +110,19 @@ describe("Composer endLeading", () => {
   it("draws nothing without it", () => {
     width(700);
     render(<Composer {...props()} />);
-    expect(row()).toEqual(["Attach a document", "Trail", "Start a call", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Trail", "Start a call"]);
   });
 
-  it("sits after trailing and before call and Send", () => {
+  it("sits after trailing and before the call button in the Send slot", () => {
     width(700);
     render(<Composer {...props({ endLeading: end })} />);
-    expect(row()).toEqual(["Attach a document", "Trail", "Model", "Start a call", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Trail", "Model", "Start a call"]);
   });
 
-  it("sits before call, voice and Send with voicePlacement end", () => {
+  it("sits before voice and the call button with voicePlacement end", () => {
     width(700);
     render(<Composer {...props({ endLeading: end, voicePlacement: "end", voice: { transcribe: vi.fn() } })} />);
-    expect(row()).toEqual(["Attach a document", "Trail", "Model", "Start a call", "Record a voice message", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Trail", "Model", "Record a voice message", "Start a call"]);
   });
 
   it("sits before the voice input and Send without a call button", () => {

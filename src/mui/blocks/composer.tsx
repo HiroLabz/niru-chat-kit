@@ -48,10 +48,9 @@ import { MentionMenu, useMentions } from "./composer-mentions";
 import { ComposerPastedTextList } from "./composer-pasted-text";
 import { takePaste } from "./composer-paste";
 import type { ComposerProps } from "./composer-props";
-import { ComposerCallButton } from "./composer-call";
-import { ComposerMicButton, ComposerMicChoiceItems, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
+import { ComposerMicButton, ComposerMicCaret, ComposerMicChoiceItems, ComposerMicMenuItem, ComposerVoiceStatus, useComposerVoice, voiceIsBusy } from "./composer-voice";
 import { ComposerMoreMenu, ComposerToggles } from "./composer-toggles";
-import { ComposerAnsweringChip, ComposerSendButton } from "./composer-send";
+import { ComposerAnsweringChip, ComposerSendSlot, sendSlotState } from "./composer-send";
 import { useNarrowBox } from "./use-narrow-box";
 
 export type { ComposerAttachment } from "./composer-attachments";
@@ -172,6 +171,7 @@ export function Composer({
   const voice = useComposerVoice({ enabled: Boolean(voiceProp), value, onChange, lang: voiceLang, options: typeof voiceProp === "object" ? voiceProp : undefined });
   const stopVoice = voice.endForSend;
   const voiceBusy = voiceIsBusy(voice);
+  const { sendBusy, talk, caretOnCall } = sendSlotState({ busy, running, canSend, onStartCall, onStop, narrow, choice: Boolean(voice.choice), waiting: attachments.length > 0 || Boolean(pastedTexts?.length) || voiceBusy });
   /** Narrow: the mic is a More item while idle, and stays in the row (with its stop control) while it works. */
   const micAtEnd = voicePlacement === "end";
   /** At the end the mic is a main action and stays in the row; only its microphone choice goes into More. */
@@ -351,7 +351,7 @@ export function Composer({
             </PromptInput.Action>
           ) : null}
 
-          {foldVoice || micAtEnd ? null : <ComposerMicButton voice={voice} disabled={disabled} />}
+          {foldVoice || micAtEnd ? null : <ComposerMicButton voice={voice} disabled={disabled} caret={!caretOnCall} />}
 
           {!narrow && chips?.length ? <ComposerChips chips={chips} disabled={disabled} removeWord={extras.remove} /> : null}
 
@@ -387,16 +387,16 @@ export function Composer({
 
           {foldTrailing ? null : endLeading}
 
-          <ComposerCallButton onStartCall={onStartCall} label={callLabel} disabled={disabled || callDisabled} />
+          {micAtEnd ? <ComposerMicButton voice={voice} disabled={disabled} placement="end" caret={!narrow && !caretOnCall} /> : null}
 
-          {micAtEnd ? <ComposerMicButton voice={voice} disabled={disabled} placement="end" caret={!narrow} /> : null}
-
-          <ComposerSendButton
-            busy={Boolean(busy) || (Boolean(running) && !canSend)}
+          <ComposerSendSlot
+            busy={sendBusy}
             onStop={onStop}
             canSend={canSend}
             onSend={submit}
             tooltip={canSend ? "Send" : attachments.length ? "Add a message to send your files" : "Write a message to send"}
+            call={{ onStartCall, label: callLabel, disabled: disabled || callDisabled, talk }}
+            caret={caretOnCall ? <ComposerMicCaret voice={voice} disabled={disabled} /> : null}
           />
         </PromptInput.Actions>
 

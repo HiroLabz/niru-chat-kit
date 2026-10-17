@@ -37,19 +37,19 @@ describe("Composer voicePlacement", () => {
   it("keeps the mic after attach by default", () => {
     width(700);
     render(<Harness onAttach={vi.fn()} onStartCall={vi.fn()} voice={{ transcribe: vi.fn() }} />);
-    expect(row()).toEqual(["Attach a document", "Record a voice message", "Start a call", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Record a voice message", "Start a call"]);
   });
 
   it("start behaves as the default", () => {
     width(700);
     render(<Harness voicePlacement="start" onAttach={vi.fn()} onStartCall={vi.fn()} voice={{ transcribe: vi.fn() }} />);
-    expect(row()).toEqual(["Attach a document", "Record a voice message", "Start a call", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Record a voice message", "Start a call"]);
   });
 
-  it("end puts the mic immediately before Send, with the call before it", () => {
+  it("end puts the mic immediately before the Send slot", () => {
     width(700);
     render(<Harness voicePlacement="end" onAttach={vi.fn()} onStartCall={vi.fn()} voice={{ transcribe: vi.fn() }} />);
-    expect(row()).toEqual(["Attach a document", "Start a call", "Record a voice message", "Send"]);
+    expect(row()).toEqual(["Attach a document", "Record a voice message", "Start a call"]);
   });
 
   it("end also works for browser dictation", () => {
@@ -139,17 +139,17 @@ describe("Composer narrow rows", () => {
   it("start: voice input stays in More, with no microphone list", () => {
     width(300);
     render(<Harness onAttach={vi.fn()} onStartCall={vi.fn()} voice={voice()} />);
-    expect(row()).toEqual(["Attach a document", "More", "Start a call", "Send"]);
+    expect(row()).toEqual(["Attach a document", "More", "Start a call"]);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     expect(screen.getByRole("menuitem", { name: "Record a voice message" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitemradio")).not.toBeInTheDocument();
   });
 
-  it("end: the row is attach, More, call, voice, Send, and the microphones are in More", () => {
+  it("end: the row is attach, More, voice, then the call button in the Send slot, and the microphones are in More", () => {
     width(300);
     const onSelectMicrophone = vi.fn();
     render(<Harness voicePlacement="end" onAttach={vi.fn()} onStartCall={vi.fn()} voice={voice({ onSelectMicrophone })} />);
-    expect(row()).toEqual(["Attach a document", "More", "Start a call", "Record a voice message", "Send"]);
+    expect(row()).toEqual(["Attach a document", "More", "Record a voice message", "Start a call"]);
     expect(document.querySelector('[data-chat="composer-bar"]')).toHaveStyle({ flexWrap: "nowrap" });
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     expect(screen.queryByRole("menuitem", { name: "Record a voice message" })).not.toBeInTheDocument();
@@ -173,5 +173,24 @@ describe("Composer narrow rows", () => {
     expect(row()).toEqual(["More", "Stop and transcribe", "Cancel recording", "Send"]);
     fireEvent.click(screen.getByRole("button", { name: "More" }));
     for (const item of screen.getAllByRole("menuitemradio")) expect(item).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
+describe("Composer waveform with the microphone choice", () => {
+  it("puts the microphone choice beside the waveform while the box is empty, and back beside the mic once there is text", () => {
+    width(700);
+    render(<Harness voicePlacement="end" onStartCall={vi.fn()} voice={voice()} />);
+    expect(row().slice(-3)).toEqual(["Record a voice message", "Start a call", "Choose microphone"]);
+    expect(document.querySelector('[data-chat="call-group"]')?.contains(screen.getByRole("button", { name: "Choose microphone" }))).toBe(true);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "hello" } });
+    expect(row().slice(-3)).toEqual(["Record a voice message", "Choose microphone", "Send"]);
+    expect(document.querySelector('[data-chat="call-group"]')).toBeNull();
+  });
+
+  it("keeps the microphone choice in More on a narrow row, with the waveform alone in the Send slot", () => {
+    width(300);
+    render(<Harness voicePlacement="end" onStartCall={vi.fn()} voice={voice()} />);
+    expect(row().slice(-2)).toEqual(["Record a voice message", "Start a call"]);
+    expect(screen.queryByRole("button", { name: "Choose microphone" })).not.toBeInTheDocument();
   });
 });

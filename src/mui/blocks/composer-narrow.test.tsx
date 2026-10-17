@@ -62,10 +62,10 @@ const rowButtons = () => within(document.querySelector('[data-chat="composer-bar
 describe("Composer row on a narrow composer", () => {
   const toggles = (active = false) => [{ id: "web", label: "Search the web", icon: <span>i</span>, active, onToggle: vi.fn() }];
 
-  it("holds attach, More, call and Send in that order, and does not wrap", () => {
+  it("holds attach, More and the call button in that order, and does not wrap", () => {
     width(300);
     render(<Harness onAttach={vi.fn()} onStartCall={vi.fn()} voice={{ transcribe: vi.fn() }} toggles={toggles()} trailing={<button aria-label="Pill">pill</button>} narrowMoreItems={<MenuItem>Model: X</MenuItem>} />);
-    expect(rowButtons()).toEqual(["Attach a document", "More", "Start a call", "Send"]);
+    expect(rowButtons()).toEqual(["Attach a document", "More", "Start a call"]);
     expect(document.querySelector('[data-chat="composer-bar"]')).toHaveStyle({ flexWrap: "nowrap" });
   });
 

@@ -92,7 +92,10 @@ export type ComposerProps = {
   narrowMoreItems?: ReactNode | ((context: ComposerMoreContext) => ReactNode);
   /** The "More" button's accessible name; default "More". The name gains ", N on" while N toggles inside are on. */
   moreLabel?: string;
-  /** Shows a round call button in the actions row, just before Send. Omit it while a call is running. */
+  /**
+   * Shows a round waveform button in the Send slot while there is nothing to send (no text, files or pasted text) and no
+   * run to stop; typing turns it back into Send. Omit it while a call is running.
+   */
   onStartCall?: () => void;
   /** The call button's tooltip and accessible name; default "Start a call". */
   callLabel?: string;

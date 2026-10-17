@@ -141,7 +141,7 @@ describe("Composer approval choice", () => {
     const bar = container.querySelector('[data-chat="composer-bar"]') as HTMLElement;
     const names = () => Array.from(bar.querySelectorAll('button, [role="button"]')).map((node) => node.getAttribute("aria-label") ?? node.textContent ?? "");
     expect(names().map((name) => (/Approve for me/.test(name) ? "approval" : /Web/.test(name) ? "Web" : name))).toEqual([
-      "Add", "approval", "Web", "Model", "Start a call", "Record a voice message", "Send",
+      "Add", "approval", "Web", "Model", "Record a voice message", "Start a call",
     ]);
     const chip = bar.querySelector('[data-chat="composer-chip"]') as Element;
     expect(Boolean(screen.getByRole("button", { name: "Add" }).compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);

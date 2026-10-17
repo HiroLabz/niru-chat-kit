@@ -2,10 +2,11 @@
 
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import CallOutlinedIcon from "@mui/icons-material/CallOutlined";
+import { alpha } from "@mui/material/styles";
+import GraphicEqRoundedIcon from "@mui/icons-material/GraphicEqRounded";
 import { useChatKitStyles } from "../theme";
 
-/** The round "Start a call" button in the composer's action row, just before Send. */
+/** The waveform "Start a call" button, which takes the Send slot while there is nothing to send. */
 export function ComposerCallButton({ onStartCall, label = "Start a call", disabled }: { onStartCall?: () => void; label?: string; disabled?: boolean }) {
   const { scheme } = useChatKitStyles();
   if (!onStartCall) return null;
@@ -18,9 +19,9 @@ export function ComposerCallButton({ onStartCall, label = "Start a call", disabl
           data-chat="call"
           disabled={disabled}
           onClick={onStartCall}
-          sx={scheme((c) => ({ border: 1, borderColor: c.border, color: c.text }))}
+          sx={scheme((c) => ({ color: c.text, "&:hover": { bgcolor: alpha(c.text, 0.08) }, "&.Mui-disabled": { color: c.mutedText } }))}
         >
-          <CallOutlinedIcon fontSize="small" />
+          <GraphicEqRoundedIcon fontSize="small" />
         </IconButton>
       </span>
     </Tooltip>

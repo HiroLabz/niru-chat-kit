@@ -17,7 +17,7 @@ import { keyframes } from "@mui/material/styles";
 import MicNoneOutlinedIcon from "@mui/icons-material/MicNoneOutlined";
 import MicIcon from "@mui/icons-material/Mic";
 import CheckIcon from "@mui/icons-material/Check";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import { alpha } from "@mui/material/styles";
 import { DEFAULT_CALL_LABELS, type CallTranslate } from "../call/call-labels";
 import { MicrophoneMenuButton } from "../call/call-microphone";
@@ -115,7 +115,7 @@ function checkedMicrophone(choice: NonNullable<ComposerVoice["choice"]>): string
 }
 
 /** The "Choose microphone" caret joined to the mic: the call picker's own menu, in the composer's colours. */
-function ComposerMicCaret({ voice, disabled }: { voice: ComposerVoice; disabled?: boolean }) {
+export function ComposerMicCaret({ voice, disabled }: { voice: ComposerVoice; disabled?: boolean }) {
   const { scheme } = useChatKitStyles();
   const colors = useCallColors();
   const choice = voice.choice;
@@ -129,7 +129,7 @@ function ComposerMicCaret({ voice, disabled }: { voice: ComposerVoice; disabled?
       colors={colors}
       t={t}
       disabled={disabled}
-      icon={<KeyboardArrowUpIcon />}
+      icon={<KeyboardArrowDownIcon />}
       sx={scheme((c) => ({
         width: 20,
         height: 30,

@@ -169,14 +169,31 @@ describe("Composer", () => {
       expect(screen.queryByRole("button", { name: "Start a call" })).not.toBeInTheDocument();
     });
 
-    it("calls onStartCall, sits before Send, and takes a custom label", () => {
+    it("takes the Send slot while the box is empty, and takes a custom label", () => {
       const onStartCall = vi.fn();
-      render(<Harness onStartCall={onStartCall} callLabel="Call Niru" />);
-      const call = screen.getByRole("button", { name: "Call Niru" });
-      fireEvent.click(call);
+      render(<Harness onStartCall={onStartCall} callLabel="Talk to Niru" />);
+      fireEvent.click(screen.getByRole("button", { name: "Talk to Niru" }));
       expect(onStartCall).toHaveBeenCalledTimes(1);
-      const send = screen.getByRole("button", { name: "Send" });
-      expect(call.compareDocumentPosition(send) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "Send" })).not.toBeInTheDocument();
+    });
+
+    it("turns into Send once there is text, and back when the text is cleared", () => {
+      render(<Harness onStartCall={vi.fn()} callLabel="Talk to Niru" />);
+      const box = screen.getByRole("textbox");
+      fireEvent.change(box, { target: { value: "hello" } });
+      expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
+      expect(screen.queryByRole("button", { name: "Talk to Niru" })).not.toBeInTheDocument();
+      fireEvent.change(box, { target: { value: "  " } });
+      expect(screen.getByRole("button", { name: "Talk to Niru" })).toBeInTheDocument();
+    });
+
+    it("gives way to Stop while a run can be stopped, and to Send while files wait", () => {
+      const { rerender } = render(<Harness onStartCall={vi.fn()} callLabel="Talk to Niru" busy onStop={vi.fn()} />);
+      expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Talk to Niru" })).not.toBeInTheDocument();
+      rerender(<Harness onStartCall={vi.fn()} callLabel="Talk to Niru" attachments={[{ id: "a", name: "a.png", kind: "image" }]} onAttach={vi.fn()} />);
+      expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+      expect(screen.queryByRole("button", { name: "Talk to Niru" })).not.toBeInTheDocument();
     });
 
     it("uses the default label and greys out with callDisabled or disabled", () => {
