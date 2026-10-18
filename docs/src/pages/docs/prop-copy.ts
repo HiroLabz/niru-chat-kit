@@ -122,6 +122,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     typing: "Set to true to show an assistant typing row while a reply is on its way.",
     agentAvatar: "Your own avatar for finished assistant messages, such as a still image. Without it, a plain letter is used.",
     liveAvatar: "The avatar for the newest assistant message while a reply arrives, and for the typing row. Use it only if your avatar is animated, because only one face should move at a time.",
+    userAvatar: "Your own avatar for the person's messages, such as their photo or initials. It sits at the end of each of their messages, the same size as the assistant's. Without it, the person's messages show no avatar.",
     turnActions: "The copy, regenerate, rate, edit and version buttons under each message. Pass the turnActions value from useChatStream.",
     onStop: "Called when someone presses Stop. When you set it, the typing row and an empty pending reply show a Stop button.",
     renderExtras: RENDER_EXTRAS,

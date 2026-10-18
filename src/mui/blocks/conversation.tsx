@@ -56,6 +56,12 @@ export type ConversationProps = {
    * settled transcript passes nothing.
    */
   liveAvatar?: ReactNode;
+  /**
+   * The person's own avatar (a photo or their initials), drawn at the end of each of their turns,
+   * the same size as the assistant's and aligned the same way. Omitted or `null`: user turns have no
+   * avatar. Keep its identity stable (a memoised element), or every user turn re-renders on each token.
+   */
+  userAvatar?: ReactNode | null;
   /** Regenerate, copy, rate, edit and branch controls for the turns the server knows by id. */
   turnActions?: ChatTurnActions | null;
   /** Cancels the in-flight run; given, the typing row and a textless pending turn show a Stop button. */
@@ -129,6 +135,7 @@ export function Conversation({
   typing,
   agentAvatar,
   liveAvatar,
+  userAvatar,
   turnActions,
   onStop,
   stopInTranscript = true,
@@ -254,6 +261,7 @@ export function Conversation({
               renderMedia={renderMedia}
               mediaProps={mediaProps}
               avatar={liveAvatar && message.id === liveId ? liveAvatar : agentAvatar}
+              userAvatar={userAvatar}
             />
             )}
           </Box>

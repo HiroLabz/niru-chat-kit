@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.2.1 (2026-10-18)
+
+- MUI skin: `Conversation` (and `ConversationTurn`) take an optional `userAvatar` (a node, `null` for none): the person's own avatar, drawn at the end of each of their turns, the same size as the assistant's avatar and aligned the same way. Keep its identity stable (a memoised element). Without it nothing is drawn, as before.
+- MUI skin: the transcript now shows a thin scrollbar in the theme's colours (it was hidden), so a long conversation shows where you are in it. Dragging the scrollbar counts as scrolling: following the newest message stops while you drag up, even in a browser that sends no pointer event for the scrollbar (a scroll event that moves up and was not our own is read as the person), and starts again when you return to the bottom. The jump button is unchanged.
+
 ## 0.2.0 (2026-10-17)
 
 - **Breaking** MUI skin: `FullChat`'s `history` prop is gone; it takes `sidebar?: ReactNode` instead, drawn in the same place (a 260 px column beside the chat, above it on a narrow screen, with the same border). Replace `history={{ ...props }}` with `sidebar={<ChatHistorySidebar {...props} />}`. `FullChat` no longer imports `ChatHistorySidebar`, so an app that never shows a sidebar (a website widget built as one file, for example) no longer bundles the tabs, menus and rename and delete dialogs (about 46 KB). A test fails if `full-chat` reaches the sidebar module again. `FullChatProps` and `FullChatStream` now live in `full-chat-props.ts` (still exported from the same place).

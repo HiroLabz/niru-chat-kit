@@ -15,6 +15,7 @@ import {
 import Box from "@mui/material/Box";
 import type { BoxProps } from "@mui/material/Box";
 import { ScrollButton } from "./scroll-button";
+import { useChatKitStyles } from "../theme";
 import { sxArray } from "./sx";
 
 /**
@@ -24,10 +25,15 @@ import { sxArray } from "./sx";
  */
 const FOLLOW_BOTTOM_SLACK_PX = 4;
 
+/** Width of the visible scrollbar, in px. Thin, but wide enough to grab with a mouse. */
+const SCROLLBAR_WIDTH_PX = 10;
+
 /**
- * Keys that scroll a focused log. The scrollbar is hidden (`scrollbarWidth: "none"`),
- * so together with wheel, touch and pointer these are every way a person can move this
- * transcript, which is what lets `onScroll` re-arm only, and never disarm.
+ * Keys that scroll a focused log. Together with wheel, touch, pointer and the scrollbar
+ * itself these are every way a person can move this transcript. The first four are caught
+ * by their own handlers; a scrollbar drag is caught by `onPointerDown` where the browser
+ * delivers it, and otherwise by `onScroll`, which treats a move up that we did not make as
+ * the person scrolling (see `movedUpByPerson`).
  */
 const SCROLLING_KEYS = new Set(["PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown", " "]);
 
@@ -89,6 +95,10 @@ function ChatContainerRoot({
   const lastHoldRef = useRef<string | null>(null);
   // While held, reaching the bottom (including by our own earlier scrolling, whose scroll event arrives late) does not resume following; only the person can.
   const heldRef = useRef(false);
+  // The scroll position we last saw or wrote. Our own writes only ever move to the bottom (down), so a
+  // scroll event that lands above this position was not ours: it is the person, dragging the scrollbar.
+  const lastTopRef = useRef(0);
+  const { scheme } = useChatKitStyles();
   const [isAtBottom, setIsAtBottom] = useState(true);
 
   // Re-arming must stay ABOVE the scrolling effect: effects run in declaration order, so
@@ -113,7 +123,9 @@ function ChatContainerRoot({
     const node = logRef.current;
     if (!node || !followBottomRef.current) return;
     const moveToLatest = () => {
-      if (followBottomRef.current) node.scrollTop = node.scrollHeight;
+      if (!followBottomRef.current) return;
+      node.scrollTop = node.scrollHeight;
+      lastTopRef.current = node.scrollTop;
     };
     moveToLatest();
     const firstFrame = window.requestAnimationFrame(moveToLatest);
@@ -141,6 +153,7 @@ function ChatContainerRoot({
     followBottomRef.current = true;
     heldRef.current = false;
     node.scrollTop = node.scrollHeight;
+    lastTopRef.current = node.scrollTop;
     setIsAtBottom(true);
   }, []);
 
@@ -177,18 +190,24 @@ function ChatContainerRoot({
           // text, which does not scroll at all. Scrolling to the bottom is the unambiguous
           // "I want the newest again" gesture, so it re-arms.
           //
-          // Re-arming only. Assigning the predicate outright let the component disarm
+          // It disarms in one case only: the position moved UP since we last looked. Assigning
+          // the predicate outright (disarm whenever there is a gap) let the component disarm
           // itself: Chrome dispatches a scroll event for our own `scrollTop` write, and
           // runs the scroll steps BEFORE the resize-observer steps. So the move landed at
           // the bottom of a log that was still 727px tall, the composer below finished
           // laying out and shrank it to 692px, and the resulting scroll event measured a
           // gap and switched following off, leaving the newest message below the fold.
-          // Every gesture that really means "stop following" is handled above; the
-          // scrollbar is hidden, so wheel, touch, pointer and the scrolling keys are the
-          // complete set of ways a person can scroll this log.
+          // A gap alone is therefore never read as intent; our own writes only move down,
+          // so a move up is the person. That is what covers dragging the scrollbar when the
+          // browser does not send a pointerdown for it (some do not for a scrollbar). Wheel,
+          // touch, pointer and the scrolling keys are handled above.
           onScroll={(event) => {
             const node = event.currentTarget;
             const atBottom = node.scrollHeight - node.scrollTop - node.clientHeight <= FOLLOW_BOTTOM_SLACK_PX;
+            // `heldRef` is left alone here: a highlight scrolls the log up on purpose, and that is
+            // not the person. A real pointer press (above) is what releases a hold.
+            if (!atBottom && node.scrollTop < lastTopRef.current - 1) followBottomRef.current = false;
+            lastTopRef.current = node.scrollTop;
             if (atBottom && !heldRef.current) followBottomRef.current = true;
             setIsAtBottom(atBottom);
             onScroll?.(event);
@@ -206,10 +225,22 @@ function ChatContainerRoot({
               // Scroll chaining stops at this log: reaching the top or bottom must not hand
               // the wheel to whatever is behind it.
               overscrollBehavior: "contain",
-              scrollbarWidth: "none",
-              msOverflowStyle: "none",
-              "&::-webkit-scrollbar": { display: "none" },
             },
+            scheme((c) => ({
+              // A thin scrollbar in the theme's own colours, so a long transcript shows where
+              // the person is in it. `scrollbar-width` and `scrollbar-color` cover Firefox and
+              // current Chrome; the webkit rules cover Safari.
+              scrollbarWidth: "thin",
+              scrollbarColor: `${c.mutedText} transparent`,
+              "&::-webkit-scrollbar": { width: SCROLLBAR_WIDTH_PX, height: SCROLLBAR_WIDTH_PX },
+              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: c.mutedText,
+                borderRadius: SCROLLBAR_WIDTH_PX,
+                border: "2px solid transparent",
+                backgroundClip: "content-box",
+              },
+            })),
             ...sxArray(sx),
           ]}
           {...rest}

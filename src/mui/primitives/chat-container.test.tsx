@@ -114,4 +114,79 @@ describe("ChatContainer", () => {
     );
     expect(screen.getByRole("log")).toHaveAttribute("data-mask", "on");
   });
+
+  it("shows a thin scrollbar instead of hiding it", () => {
+    render(
+      <ChatContainer.Root>
+        <p>one</p>
+      </ChatContainer.Root>
+    );
+    const css = Array.from(document.querySelectorAll("style"))
+      .map((tag) => tag.textContent ?? "")
+      .join("");
+    expect(css).toMatch(/scrollbar-width:\s*thin/);
+    expect(css).toContain("::-webkit-scrollbar-thumb");
+    expect(css).not.toMatch(/scrollbar-width:\s*none/);
+    expect(css).not.toMatch(/::-webkit-scrollbar\{display:\s*none/);
+  });
+
+  it("stops following when the scrollbar is dragged up, even with no pointer or wheel event, and resumes at the bottom", () => {
+    const { rerender } = render(
+      <ChatContainer.Root>
+        <p>one</p>
+      </ChatContainer.Root>
+    );
+    const log = screen.getByRole("log");
+    setLogMetrics(log, { scrollHeight: 1000, clientHeight: 400 });
+    log.scrollTop = 600;
+    fireEvent.scroll(log);
+
+    // The thumb is dragged up: a scroll event only, nothing else fires.
+    log.scrollTop = 300;
+    fireEvent.scroll(log);
+    setLogMetrics(log, { scrollHeight: 2000, clientHeight: 400 });
+    rerender(
+      <ChatContainer.Root>
+        <p>one</p>
+        <p>two</p>
+      </ChatContainer.Root>
+    );
+    expect(log.scrollTop).toBe(300);
+
+    // Dragged back to the bottom: following resumes.
+    log.scrollTop = 1600;
+    fireEvent.scroll(log);
+    setLogMetrics(log, { scrollHeight: 2400, clientHeight: 400 });
+    rerender(
+      <ChatContainer.Root>
+        <p>one</p>
+        <p>two</p>
+        <p>three</p>
+      </ChatContainer.Root>
+    );
+    expect(log.scrollTop).toBe(2400);
+  });
+
+  it("does not read a gap left by new content below our own scroll as the person scrolling", () => {
+    const { rerender } = render(
+      <ChatContainer.Root>
+        <p>one</p>
+      </ChatContainer.Root>
+    );
+    const log = screen.getByRole("log");
+    setLogMetrics(log, { scrollHeight: 1000, clientHeight: 400 });
+    log.scrollTop = 600;
+    fireEvent.scroll(log);
+
+    // Content grew before the scroll event for our own move arrived: the gap is not intent.
+    setLogMetrics(log, { scrollHeight: 1200, clientHeight: 400 });
+    fireEvent.scroll(log);
+    rerender(
+      <ChatContainer.Root>
+        <p>one</p>
+        <p>two</p>
+      </ChatContainer.Root>
+    );
+    expect(log.scrollTop).toBe(1200);
+  });
 });

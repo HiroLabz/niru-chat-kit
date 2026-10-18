@@ -192,6 +192,26 @@ describe("Conversation", () => {
     expect(screen.getByText("Q")).toBeInTheDocument();
   });
 
+  it("draws the person's avatar at the end of each of their turns, and none without the prop", () => {
+    const messages: ChatMessage[] = [
+      user,
+      { id: "a1", role: "assistant", text: "Hi" },
+      { id: "u2", role: "user", text: "And then?" },
+    ];
+    const { container, rerender } = render(<Conversation messages={messages} agentAvatar={null} />);
+    expect(container.querySelector(".MuiAvatar-root")).toBeNull();
+
+    rerender(<Conversation messages={messages} agentAvatar={null} userAvatar={<span>my face</span>} />);
+    expect(screen.getAllByText("my face")).toHaveLength(2);
+    const row = screen.getAllByText("my face")[0].closest('[data-role="user"]');
+    // Mirrors the assistant: after the bubble, never before it.
+    expect(row?.querySelector('[data-chat="turn-body"]')?.nextElementSibling).toHaveTextContent("my face");
+    expect(container.querySelector('[data-role="assistant"]')).not.toHaveTextContent("my face");
+
+    rerender(<Conversation messages={messages} agentAvatar={null} userAvatar={null} />);
+    expect(screen.queryByText("my face")).not.toBeInTheDocument();
+  });
+
   it("marks the timestamp so an app can show it on hover only", () => {
     const { container } = render(
       <Conversation messages={[{ id: "a0", role: "assistant", text: "Hello", at: 1000 }]} />

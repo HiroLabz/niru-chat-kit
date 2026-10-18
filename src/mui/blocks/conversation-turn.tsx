@@ -63,6 +63,12 @@ export type ConversationTurnProps = {
    */
   avatar?: ReactNode | null;
   /**
+   * The person's own face, drawn at the end of their turn (the mirror of the assistant's avatar,
+   * at the same size and alignment). Omitted or `null`: a user turn has no avatar. Keep its
+   * identity stable: the turn is memoised.
+   */
+  userAvatar?: ReactNode | null;
+  /**
    * Cancels the in-flight run. Given for a pending assistant turn with no text yet, the
    * typing dots become a `ThinkingBar` with a Stop button; omitted keeps the plain loader.
    */
@@ -100,6 +106,7 @@ export const ConversationTurn = memo(function ConversationTurn({
   message,
   agentInitial = "H",
   avatar,
+  userAvatar,
   actions,
   onStop,
   stopHidden,
@@ -223,6 +230,7 @@ export const ConversationTurn = memo(function ConversationTurn({
         ) : null}
       </Box>
       {message.spoken && !isUser ? <SpokenMark /> : null}
+      {isUser ? (userAvatar ?? null) : null}
     </Message>
   );
 });
