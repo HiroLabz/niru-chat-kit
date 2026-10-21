@@ -1,6 +1,6 @@
 {
   "name": "@hiro/niru-chat-kit",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Streaming chat kit: a UI-library-free core and an MUI skin, modelled on prompt-kit.",
   "license": "MIT",
   "type": "module",

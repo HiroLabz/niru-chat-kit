@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.3.0 (2026-10-22)
+
+- Core: `usePromptQueue({ running, paused, onSend, onSteer, onEdit })` holds prompts typed while a turn works. It sends one queued prompt each time `running` turns false, skips prompts being steered, and returns `items`, `steering`, `note`, `canSteer`, `add`, `remove`, `edit`, `steer`. New types `QueuedPrompt`, `SteerResult`.
+- MUI skin: new `PromptQueue` block (a "Queued" header and a row per prompt with Steer, Edit and Delete), drawn by `Composer` above the text box when you pass `queue` (the hook's return works as is). `FullChat` takes `queue` and `onQueue`: with both, Send during a turn calls `onQueue(text)`. Nothing changes unless you use them.
+
 ## 0.2.2 (2026-10-21)
 
 - MUI skin: new `MarkdownComponentsProvider` (`components`, `children`). Element overrides it supplies apply to every `Markdown` the kit draws, including chat messages and timelines, where the app could not pass `components` before. Overrides passed straight to `Markdown` still win. Niru Chat uses it to hold back images from hosts it does not trust behind a "Load image" button. Nothing changes unless you use it.

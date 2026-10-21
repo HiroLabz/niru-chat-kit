@@ -22,7 +22,7 @@ You implement one `ChatTransport` (the only thing that knows your backend), pass
 ## MUI entry (`@hiro/niru-chat-kit/mui`)
 
 - Whole chat: `FullChat`, `Conversation`, `ConversationTurn`, `ChatHistorySidebar` (pin, Saved tab; passed to `FullChat` as `sidebar`), `ConversationHeader`, `ChatEmptyState`.
-- Input: `Composer` (attachments, settings, `voice` (true, or `ComposerVoiceOptions` with `transcribe` to record), `toggles`, `moreActions`, `commands` (slash commands the app supplies)), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`.
+- Input: `Composer` (attachments, settings, `voice` (true, or `ComposerVoiceOptions` with `transcribe` to record), `toggles`, `moreActions`, `commands` (slash commands the app supplies)), `PromptInput`, `FileUpload`, `PromptSuggestion`, `ComposerPills`, `PromptQueue` (stacked queued prompts with Steer, Edit, Delete; pass `queue` to `Composer`/`FullChat`, fed by core's `usePromptQueue`).
 - Turn parts: `TurnActions`, `TurnTimeline`, `TurnSteps`, `Tool`, `Reasoning`, `Steps`, `ChainOfThought`, `Source`, `SourceList`, `MessageMedia` (images, videos and audio under a reply; core type `MediaItem`), `FeedbackBar`, `Image`, `Markdown`, `CodeBlock`, `JSXPreview`.
 - Human in the loop: `InterruptPrompt`, `ApprovalCard`, `QuestionCard` (the in-thread question with tappable answers), `MessageEditForm`.
 - Call mode: `CallStage` (`.Header`, `.Status`, `.Captions`, `.Preview`, `.Controls`), `VoiceLevelPill`, `CallOrb`, `CallControlButton`, `CallStrip`, `CallCard`, `CallProblemScreen`, `useCallColors`, `DEFAULT_CALL_LABELS`.

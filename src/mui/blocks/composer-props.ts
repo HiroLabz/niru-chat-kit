@@ -11,6 +11,7 @@ import type { ComposerAddMenuOptions } from "./composer-add-menu";
 import type { ComposerApprovalMode } from "./composer-approval-mode";
 import type { ComposerChip } from "./composer-chips";
 import type { ComposerExtrasLabels } from "./composer-extras-labels";
+import type { PromptQueueProps } from "./prompt-queue";
 
 export type ComposerProps = {
   value: string;
@@ -172,4 +173,10 @@ export type ComposerProps = {
   approvalMode?: ComposerApprovalMode;
   /** Overrides for the words of the extras above (Add menu, chips, pasted text, approval); see `ComposerExtrasLabels`. */
   extrasLabels?: Partial<ComposerExtrasLabels>;
+  /**
+   * Prompts waiting behind the running turn, stacked above the text box inside the composer: each row has Steer, Edit and
+   * Delete. Pass the return of core's `usePromptQueue` as is, or `{ items, onSteer, onEdit, onDelete, canSteer, note, steering, labels }`.
+   * While `running`, Send calls `onSubmit` so the host can add the text to the queue. Omitted: nothing changes.
+   */
+  queue?: PromptQueueProps;
 };
