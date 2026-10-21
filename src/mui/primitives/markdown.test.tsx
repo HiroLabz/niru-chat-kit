@@ -20,7 +20,7 @@ vi.mock("remark-math", async (importOriginal) => {
   };
 });
 
-import { Markdown } from "./markdown";
+import { Markdown, MarkdownComponentsProvider } from "./markdown";
 import { resetMathPluginsForTests } from "../../core/markdown/math-plugins";
 
 describe("Markdown", () => {
@@ -159,5 +159,28 @@ describe("Markdown", () => {
 
       await waitFor(() => expect(container.querySelector(".katex-error, .katex")).not.toBeNull());
     });
+  });
+});
+
+describe("MarkdownComponentsProvider", () => {
+  it("lets the host app replace how every image in the markdown is drawn", () => {
+    render(
+      <MarkdownComponentsProvider components={{ img: ({ src }) => <span>held {String(src)}</span> }}>
+        <Markdown>{"![chart](https://example.com/c.png)"}</Markdown>
+      </MarkdownComponentsProvider>
+    );
+
+    expect(screen.getByText("held https://example.com/c.png")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
+  });
+
+  it("keeps a component passed straight to Markdown over the provided one", () => {
+    render(
+      <MarkdownComponentsProvider components={{ img: () => <span>from provider</span> }}>
+        <Markdown components={{ img: () => <span>from props</span> }}>{"![a](https://example.com/a.png)"}</Markdown>
+      </MarkdownComponentsProvider>
+    );
+
+    expect(screen.getByText("from props")).toBeInTheDocument();
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { isValidElement, memo, useId, useMemo, type ReactNode } from "react";
+import { createContext, isValidElement, memo, useContext, useId, useMemo, type ReactNode } from "react";
 import { marked } from "marked";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -54,6 +54,23 @@ const defaultComponents: Components = {
     return <Image src={src} alt={alt} />;
   },
 };
+
+/**
+ * Element overrides the host app supplies once for every markdown the kit renders (messages,
+ * timelines). The web app uses it to put an image policy on `img`: model-written images load
+ * only from allowed hosts and anything else waits behind a "Load image" button.
+ */
+const MarkdownComponentsContext = createContext<Partial<Components> | undefined>(undefined);
+
+export function MarkdownComponentsProvider({
+  components,
+  children,
+}: {
+  components: Partial<Components>;
+  children: ReactNode;
+}) {
+  return <MarkdownComponentsContext.Provider value={components}>{children}</MarkdownComponentsContext.Provider>;
+}
 
 /** Theme-aware spacing and colours for rendered markdown, every colour from the tokens. */
 export function markdownStyles(c: ChatKitColorTokens, all: ChatKitTokens) {
@@ -181,6 +198,11 @@ export function Markdown({
   onBlockRender?: (index: number) => void;
 }) {
   const autoId = useId();
+  const provided = useContext(MarkdownComponentsContext);
+  const merged = useMemo(
+    () => (provided || components ? { ...provided, ...components } : undefined),
+    [provided, components]
+  );
   const blockId = id ?? autoId;
   const { scheme } = useChatKitStyles();
   // KaTeX is only fetched for a message that contains a maths delimiter.
@@ -202,7 +224,7 @@ export function Markdown({
           key={`${blockId}-block-${index}`}
           content={raw}
           math={math}
-          components={components}
+          components={merged}
           onRender={onBlockRender ? () => onBlockRender(index) : undefined}
         />
       ))}

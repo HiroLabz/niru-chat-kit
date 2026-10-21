@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.2.2 (2026-10-21)
+
+- MUI skin: new `MarkdownComponentsProvider` (`components`, `children`). Element overrides it supplies apply to every `Markdown` the kit draws, including chat messages and timelines, where the app could not pass `components` before. Overrides passed straight to `Markdown` still win. Niru Chat uses it to hold back images from hosts it does not trust behind a "Load image" button. Nothing changes unless you use it.
+
 ## 0.2.1 (2026-10-18)
 
 - MUI skin: `Conversation` (and `ConversationTurn`) take an optional `userAvatar` (a node, `null` for none): the person's own avatar, drawn at the end of each of their turns, the same size as the assistant's avatar and aligned the same way. Keep its identity stable (a memoised element). Without it nothing is drawn, as before.
