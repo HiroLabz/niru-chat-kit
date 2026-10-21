@@ -5,6 +5,7 @@ export * from "./chat-history-sidebar";
 export * from "./composer";
 export { ComposerAttachmentList } from "./composer-attachments";
 export * from "./composer-pills";
+export * from "./prompt-queue";
 export * from "./composer-suggestions";
 export * from "./slash-command-menu";
 export * from "./use-slash-commands";

@@ -22,6 +22,7 @@ export * from "./hooks/use-chat-stream";
 export * from "./hooks/chat-stream-options";
 export * from "./hooks/use-conversation-branches";
 export * from "./hooks/use-follow-ups";
+export * from "./hooks/use-prompt-queue";
 export * from "./hooks/use-run-ids";
 export * from "./hooks/use-stream-failure";
 export * from "./hooks/use-stream-transcript";

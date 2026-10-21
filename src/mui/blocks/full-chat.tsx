@@ -95,11 +95,15 @@ export function FullChat({
   approvalMode,
   endLeading,
   extrasLabels,
+  queue,
+  onQueue,
 }: FullChatProps) {
   const { scheme } = useChatKitStyles();
   const [draft, setDraft] = useState("");
   const { inputRef, fill } = useSuggestionFill(setDraft);
   const busy = stream.status === "connecting" || stream.status === "streaming";
+  /** With a queue and `onQueue`, the box stays usable while a turn works and Send hands the text to the host. */
+  const queueing = Boolean(queue && onQueue);
 
   /** A question the agent asked in words; approvals keep their own card and panel below. */
   const asked = stream.status === "needs_input" && isQuestionInterrupt(stream.interrupt) ? stream.interrupt : null;
@@ -120,7 +124,14 @@ export function FullChat({
 
   function sendText(text: string) {
     const trimmed = text.trim();
-    if (!trimmed || busy || disabled) return;
+    if (!trimmed || disabled) return;
+    if (busy) {
+      if (queueing) {
+        onQueue?.(trimmed);
+        setDraft("");
+      }
+      return;
+    }
     if (asked) answerQuestion(trimmed);
     else void stream.send(trimmed);
     setDraft("");
@@ -258,7 +269,8 @@ export function FullChat({
                 onChange={setDraft}
                 onSubmit={() => sendText(draft)}
                 onStop={() => void stream.stop()}
-                busy={busy}
+                busy={busy && !queueing}
+                running={busy && queueing}
                 disabled={disabled}
                 placeholder={placeholder}
                 answering={asked ? { question: asked.question } : undefined}
@@ -303,6 +315,7 @@ export function FullChat({
                 approvalMode={approvalMode}
                 endLeading={endLeading}
                 extrasLabels={extrasLabels}
+                queue={queue}
               />
             </Box>
           )}

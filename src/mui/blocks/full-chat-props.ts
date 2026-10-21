@@ -123,6 +123,11 @@ export type FullChatProps = {
    * for example "Use your best judgement". Omitted: no such link.
    */
   decideAnswer?: string;
+  /**
+   * Called with the text when Send is pressed while a turn works and `queue` is given; the box then stays usable during the
+   * turn (Stop shows while it is empty) and the host adds the text to its queue. Without it the box waits for the turn as before.
+   */
+  onQueue?: (text: string) => void;
   /** The link's text; default "Let the agent decide". */
   decideLabel?: string;
   /** Replaces words on the question card; see `QuestionCardLabels`. */
@@ -130,5 +135,5 @@ export type FullChatProps = {
 } & Pick<
   ComposerProps,
   // The composer's opt-in extras, passed straight through; each is documented on `Composer`.
-  "addMenu" | "chips" | "pastedTexts" | "onPasteLongText" | "onRemovePastedText" | "onShowPastedText" | "longPasteThreshold" | "mentions" | "onMention" | "mentionsLabel" | "mentionsEmptyText" | "mentionsLoading" | "approvalMode" | "extrasLabels" | "endLeading"
+  "addMenu" | "chips" | "pastedTexts" | "onPasteLongText" | "onRemovePastedText" | "onShowPastedText" | "longPasteThreshold" | "mentions" | "onMention" | "mentionsLabel" | "mentionsEmptyText" | "mentionsLoading" | "approvalMode" | "extrasLabels" | "endLeading" | "queue"
 >;

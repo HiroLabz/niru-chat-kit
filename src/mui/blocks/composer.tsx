@@ -52,6 +52,7 @@ import { ComposerMicButton, ComposerMicCaret, ComposerMicChoiceItems, ComposerMi
 import { ComposerMoreMenu, ComposerToggles } from "./composer-toggles";
 import { ComposerAnsweringChip, ComposerSendSlot, sendSlotState } from "./composer-send";
 import { useNarrowBox } from "./use-narrow-box";
+import { PromptQueue } from "./prompt-queue";
 
 export type { ComposerAttachment } from "./composer-attachments";
 export type { ComposerProps } from "./composer-props";
@@ -143,6 +144,7 @@ export function Composer({
   mentionsLoading,
   approvalMode,
   extrasLabels,
+  queue,
 }: ComposerProps) {
   const { scheme } = useChatKitStyles();
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -284,6 +286,8 @@ export function Composer({
             {settings}
           </Box>
         </Collapse>
+
+        {queue ? <PromptQueue {...queue} disabled={queue.disabled ?? disabled} /> : null}
 
         <PromptInput.Textarea
           placeholder={answering ? answeringPlaceholder : placeholder}
