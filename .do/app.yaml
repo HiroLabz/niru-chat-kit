@@ -1,0 +1,21 @@
+# DigitalOcean App Platform spec for the docs site and live demo (docs/). A static site: no server,
+# no secrets, and the demo only replays scripted replies, so it never calls Niru or any other API.
+# Every push to main rebuilds it, so the site always shows the kit's current code.
+#
+# Create:  doctl apps create --spec .do/app.yaml
+# Update:  doctl apps update <app id> --spec .do/app.yaml
+name: niru-chat-kit
+region: sgp
+
+static_sites:
+  - name: docs
+    github:
+      repo: HiroLabz/niru-chat-kit
+      branch: main
+      deploy_on_push: true
+    # The build runs in docs/ but reads the kit's source from ../src, which the clone includes.
+    source_dir: docs
+    build_command: pnpm build
+    output_dir: dist
+    # The site uses a hash router; this keeps a typed path working too (as docs/netlify.toml does).
+    catchall_document: index.html

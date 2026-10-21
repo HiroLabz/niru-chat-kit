@@ -5,7 +5,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import LanguageIcon from "@mui/icons-material/Language";
-import { createFakeVoiceSession, useChatStream } from "@hiro/niru-chat-kit";
+import { createFakeVoiceSession, useChatStream, type SlashCommand } from "@hiro/niru-chat-kit";
 import {
   CallStrip,
   ChatEmptyState,
@@ -18,7 +18,6 @@ import {
   SuggestionPills,
   type ComposerAttachment,
   type ComposerToggle,
-  type SlashCommand,
 } from "@hiro/niru-chat-kit/mui";
 import { example } from "../../components/Example";
 import { C } from "../../components/Section";
