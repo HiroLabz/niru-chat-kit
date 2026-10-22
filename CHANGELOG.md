@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Composer voice: while recording with `transcribe`, the words the browser's own speech recognition hears show as a muted preview beside the timer (and as `interim` from `useSpeechInput`). It is a preview only: it is never sent anywhere and never becomes the text; the `transcribe` result replaces it on stop, and cancel clears it. Browsers without speech recognition behave as before, with no error.
+
 ## 0.3.0 (2026-10-22)
 
 - Core: `usePromptQueue({ running, paused, onSend, onSteer, onEdit })` holds prompts typed while a turn works. It sends one queued prompt each time `running` turns false, skips prompts being steered, and returns `items`, `steering`, `note`, `canSteer`, `add`, `remove`, `edit`, `steer`. New types `QueuedPrompt`, `SteerResult`.

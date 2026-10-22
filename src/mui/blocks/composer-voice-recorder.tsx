@@ -132,6 +132,16 @@ export function RecorderStatus({ speech, labels }: Omit<RecorderProps, "disabled
         />
       ) : null}
       <span>{text}</span>
+      {state === "recording" && speech.interim ? (
+        <Box
+          component="span"
+          aria-hidden
+          data-testid="voice-preview"
+          sx={scheme((c) => ({ flex: "1 1 0", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: c.mutedText, fontStyle: "italic" }))}
+        >
+          {speech.interim}
+        </Box>
+      ) : null}
       {state === "recording" ? (
         <>
           <span aria-hidden data-testid="voice-elapsed">

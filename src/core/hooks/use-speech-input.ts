@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSpeechPreview } from "./use-speech-preview";
 import { useRecordedSpeech, type TranscribeAudio, type UseRecordedSpeechResult } from "./use-recorded-speech";
 
 type RecognitionResult = ArrayLike<{ transcript: string }> & { isFinal: boolean };
@@ -50,6 +51,7 @@ export type UseSpeechInputOptions = {
 export type UseSpeechInputResult = {
   supported: boolean;
   listening: boolean;
+  /** Browser dictation: the phrase still being recognised. With `transcribe`: a preview of the words heard while recording, shown only and never used as the text. */
   interim: string;
   /** The recognition error code (`not-allowed`, `no-speech`, ...) of the last session, or null. */
   error: string | null;
@@ -110,6 +112,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
     onFinal: options.onFinal,
   });
   const recognition = useBrowserSpeech(options);
+  const preview = useSpeechPreview(Boolean(options.transcribe) && recorded.state === "recording", options.lang);
   const disabledReason = options.disabledReason?.trim() || null;
   const { start: startRecording } = recorded;
   const startUnlessDisabled = useCallback(() => {
@@ -119,7 +122,7 @@ export function useSpeechInput(options: UseSpeechInputOptions = {}): UseSpeechIn
   return {
     supported: recorded.supported,
     listening: recorded.state === "recording",
-    interim: "",
+    interim: preview,
     error: recorded.failure,
     start: startUnlessDisabled,
     stop: recorded.stop,

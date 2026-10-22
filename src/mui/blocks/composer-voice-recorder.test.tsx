@@ -209,3 +209,36 @@ describe("Composer voice that records", () => {
     expect(rules).toMatch(/prefers-reduced-motion: reduce\)\s*\{[^}]*animation:\s*none/);
   });
 });
+
+describe("Composer recording preview", () => {
+  it("shows the heard words muted beside the timer while recording and drops them on stop", async () => {
+    class Recognition {
+      static last: Recognition | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((event: unknown) => void) | null = null;
+      onerror: (() => void) | null = null;
+      onend: (() => void) | null = null;
+      constructor() {
+        Recognition.last = this;
+      }
+      start() {}
+      abort() {}
+    }
+    Object.assign(window, { SpeechRecognition: Recognition });
+    try {
+      render(<Harness voice={{ transcribe: vi.fn(async () => "final") }} />);
+      await click("Record a voice message");
+      expect(screen.queryByTestId("voice-preview")).not.toBeInTheDocument();
+      act(() => Recognition.last?.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: "hello niru" }], { isFinal: false })] }));
+      expect(screen.getByTestId("voice-preview")).toHaveTextContent("hello niru");
+      expect(screen.getByTestId("voice-preview")).toHaveAttribute("aria-hidden", "true");
+      await click("Stop and transcribe");
+      expect(screen.queryByTestId("voice-preview")).not.toBeInTheDocument();
+      expect(box()).toHaveValue("final");
+    } finally {
+      Reflect.deleteProperty(window, "SpeechRecognition");
+    }
+  });
+});
