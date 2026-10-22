@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- MUI skin: the argument list of a tool call (`ToolArgsList`, shown in the approval card and in a step's details) no longer prints nested values as JSON. A list or object is written as plain indented lines under a plain label (`file_name` reads "File name"), a list of plain values is one comma line, and a value longer than six lines or 320 characters is folded behind a Show all / Show less button. `toolArgEntries` entries gain `label`; a nested entry's `value` is the plain text, not JSON. New export `argLabel`.
 - Composer voice: while recording with `transcribe`, the words the browser's own speech recognition hears show as a muted preview beside the timer (and as `interim` from `useSpeechInput`). It is a preview only: it is never sent anywhere and never becomes the text; the `transcribe` result replaces it on stop, and cancel clears it. Browsers without speech recognition behave as before, with no error.
 
 ## 0.3.0 (2026-10-22)

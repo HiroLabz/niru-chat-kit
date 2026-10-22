@@ -99,7 +99,7 @@ describe("Tool summary and details", () => {
     expect(screen.queryByTestId("tool-details")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
     const details = screen.getByTestId("tool-details");
-    expect(details).toHaveTextContent("page:");
+    expect(details).toHaveTextContent("Page:");
     expect(details).toHaveTextContent("support");
     expect(details).toHaveTextContent("Agent 1");
     expect(details).toHaveTextContent("Took 3s");
