@@ -15,7 +15,6 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import BuildIcon from "@mui/icons-material/BuildOutlined";
 import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ImageIcon from "@mui/icons-material/ImageOutlined";
 import PublicIcon from "@mui/icons-material/PublicOutlined";
 import TerminalIcon from "@mui/icons-material/TerminalOutlined";
@@ -31,6 +30,7 @@ import {
 import { stepTitle, type WorkingStep } from "../../core/working-process";
 import CheckIcon from "@mui/icons-material/CheckOutlined";
 import { useChatKitStyles, useChatLook } from "../theme";
+import { DisclosureChevron } from "../primitives/disclosure-chevron";
 import { Markdown } from "../primitives/markdown";
 import { Reasoning, useReasoning } from "../primitives/reasoning";
 import { TextShimmer } from "../primitives/text-shimmer";
@@ -82,13 +82,7 @@ function TimelineHeader({ label, running }: { label: string; running: boolean })
       ) : (
         <Typography sx={scheme((c) => ({ fontSize: FONT_SIZE + 1, color: c.mutedText }))}>{label}</Typography>
       )}
-      <ExpandMoreIcon
-        sx={{
-          fontSize: 16,
-          transition: "transform 150ms",
-          transform: open ? "none" : "rotate(-90deg)",
-        }}
-      />
+      <DisclosureChevron open={open} size={16} />
       {stepsCard ? (
         <Box component="span" data-chat="steps-state" sx={{ ml: "auto", display: "inline-flex", alignItems: "center", gap: 0.5 }}>
           {running ? "Working" : "Finished"}
@@ -127,9 +121,7 @@ function ActivityLine({ part }: { part: Extract<TurnPart, { kind: "activity" }> 
             ) : (
               <Typography sx={scheme((c) => ({ fontSize: FONT_SIZE, color: c.mutedText }))}>{text}</Typography>
             )}
-            <ExpandMoreIcon
-              sx={{ fontSize: 14, transition: "transform 150ms", transform: open ? "none" : "rotate(-90deg)" }}
-            />
+            <DisclosureChevron open={open} size={14} />
           </ButtonBase>
           <Collapse in={open} unmountOnExit>
             <Stack spacing={0.75} sx={{ pl: 2.75 }}>
@@ -184,9 +176,7 @@ function BlockTrigger({ streaming }: { streaming: boolean }) {
           {TURN_TIMELINE_COPY.reasoning}
         </Typography>
       )}
-      <ExpandMoreIcon
-        sx={{ fontSize: 14, transition: "transform 150ms", transform: open ? "none" : "rotate(-90deg)" }}
-      />
+      <DisclosureChevron open={open} size={14} />
     </Reasoning.Trigger>
   );
 }

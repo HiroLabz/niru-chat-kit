@@ -41,7 +41,7 @@ export const COMPONENT_COPY: Record<string, string> = {
   TurnActions: "The buttons under a finished reply: copy, regenerate, rate, edit a question, delete, and move between versions. A button shows only when you pass the function for it.",
   TurnCopyButton: "A copy button for a reply's answer text. It reads Copied for a moment afterwards. Reasoning and tool details are not copied.",
   MessageEditForm: "A small form for rewording a question. Saving sends the new wording as a new version of the question.",
-  SourceList: "The Sources row under an answer, with one chip per source. Shows nothing when there are no sources.",
+  SourceList: "A collapsed View Sources section under an answer. Pressing it shows one chip per source; pressing it again hides them. Shows nothing when there are no sources.",
   FileChip: "A chip for one file the agent made, with its name, type and size. It has a Download button when you supply a way to download.",
   FileChipList: "The files a reply made, shown under its answer. Shows nothing when there are none.",
   InterruptPrompt: "The card shown when a run pauses and waits for the person: either a question with a text box, or an approval with Approve, Edit and Deny.",
