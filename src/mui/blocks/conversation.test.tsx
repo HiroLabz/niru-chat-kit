@@ -97,6 +97,7 @@ describe("Conversation", () => {
         ]}
       />
     );
+    fireEvent.click(screen.getByRole("button", { name: "View Sources" }));
     expect(screen.getByText("Handbook.pdf")).toBeInTheDocument();
     expect(screen.getByTestId("message-stopped")).toBeInTheDocument();
     expect(screen.getByText("report.csv")).toBeInTheDocument();

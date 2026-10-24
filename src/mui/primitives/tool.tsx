@@ -17,7 +17,6 @@ import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { alpha } from "@mui/material/styles";
 import type { ChipProps } from "@mui/material/Chip";
 import type { StackProps } from "@mui/material/Stack";
@@ -29,6 +28,7 @@ import {
 } from "../../core/working-process";
 import type { ChatKitColorTokens } from "../../core/tokens";
 import { useChatKitStyles } from "../theme";
+import { DisclosureChevron } from "./disclosure-chevron";
 import { sxArray } from "./sx";
 import { ToolArgsList, toolArgEntries } from "./tool-args";
 import { ToolValue } from "./tool-io";
@@ -89,20 +89,6 @@ export function cardToolName(name: string, format: (name: string) => string = hu
 
 function plain(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function Chevron({ open, size }: { open: boolean; size: number }) {
-  const { scheme } = useChatKitStyles();
-  return (
-    <ExpandMoreIcon
-      sx={scheme((c) => ({
-        fontSize: size,
-        color: c.mutedText,
-        transition: "transform 150ms",
-        transform: open ? "none" : "rotate(-90deg)",
-      }))}
-    />
-  );
 }
 
 function StepDetailsBody({ step }: { step: WorkingStep }) {
@@ -197,7 +183,7 @@ export function Tool({
 
   const header = (
     <>
-      {expandable ? <Chevron open={open} size={16} /> : null}
+      {expandable ? <DisclosureChevron open={open} size={16} /> : null}
       <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{name}</Typography>
       <Chip
         size="small"
@@ -267,7 +253,7 @@ export function Tool({
                   aria-expanded={detailsOpen}
                   sx={scheme((c) => ({ alignSelf: "flex-start", gap: 0.5, color: c.mutedText }))}
                 >
-                  <Chevron open={detailsOpen} size={14} />
+                  <DisclosureChevron open={detailsOpen} size={14} />
                   <Typography sx={{ fontSize: 12, fontWeight: 600 }}>Details</Typography>
                 </ButtonBase>
                 <Collapse in={detailsOpen} unmountOnExit>

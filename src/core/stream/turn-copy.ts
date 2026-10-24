@@ -77,3 +77,8 @@ export const TURN_TIMELINE_COPY = {
   workedNoDuration: "Worked",
   more: (head: string, count: number) => `${head} and ${count} more`,
 } as const;
+
+/** The sources disclosure under a reply: one button that shows or hides the source chips. */
+export const SOURCE_LIST_COPY = {
+  toggle: "View Sources",
+} as const;

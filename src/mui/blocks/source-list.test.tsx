@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { SourceList } from "./source-list";
 import type { Citation } from "../../core/types";
 
@@ -23,6 +23,13 @@ const WEB_CITATION: Citation = {
   title: "Example Page",
 };
 
+/** Renders the list and presses "View Sources", so the chips are on screen. */
+function renderOpen(citations: Citation[]) {
+  const result = render(<SourceList citations={citations} />);
+  fireEvent.click(screen.getByRole("button", { name: "View Sources" }));
+  return result;
+}
+
 describe("SourceList", () => {
   it("renders nothing when citations is undefined", () => {
     const { container } = render(<SourceList citations={undefined} />);
@@ -35,12 +42,12 @@ describe("SourceList", () => {
   });
 
   it("renders a document citation as a chip labeled with its label", () => {
-    render(<SourceList citations={[DOCUMENT_CITATION]} />);
+    renderOpen([DOCUMENT_CITATION]);
     expect(screen.getByText("report.pdf, p.3")).toBeInTheDocument();
   });
 
   it("renders a web citation as a chip linking to its url in a new tab", () => {
-    render(<SourceList citations={[WEB_CITATION]} />);
+    renderOpen([WEB_CITATION]);
     const link = screen.getByText("Example Page").closest("a");
     expect(link).toHaveAttribute("href", "https://example.com/page");
     expect(link).toHaveAttribute("target", "_blank");
@@ -48,14 +55,12 @@ describe("SourceList", () => {
   });
 
   it("dedupes document citations by label", () => {
-    render(
-      <SourceList citations={[DOCUMENT_CITATION, { ...DOCUMENT_CITATION, page: 4 }]} />
-    );
+    renderOpen([DOCUMENT_CITATION, { ...DOCUMENT_CITATION, page: 4 }]);
     expect(screen.getAllByText("report.pdf, p.3")).toHaveLength(1);
   });
 
   it("opens a hover card with the title and host for a web citation", () => {
-    render(<SourceList citations={[WEB_CITATION]} />);
+    renderOpen([WEB_CITATION]);
     const link = screen.getByText("Example Page").closest("a") as HTMLElement;
 
     fireEvent.mouseEnter(link);
@@ -63,7 +68,7 @@ describe("SourceList", () => {
   });
 
   it("keeps the chip a plain clickable link with no backdrop while the card is open", () => {
-    render(<SourceList citations={[WEB_CITATION]} />);
+    renderOpen([WEB_CITATION]);
     const link = screen.getByText("Example Page").closest("a") as HTMLElement;
     fireEvent.mouseEnter(link);
     expect(screen.getByRole("tooltip")).toBeInTheDocument();
@@ -75,19 +80,12 @@ describe("SourceList", () => {
   });
 
   it("renders no hover card trigger for a document citation, which has no url", () => {
-    render(<SourceList citations={[DOCUMENT_CITATION]} />);
+    renderOpen([DOCUMENT_CITATION]);
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("dedupes web citations by url, not by label alone", () => {
-    render(
-      <SourceList
-        citations={[
-          WEB_CITATION,
-          { ...WEB_CITATION, url: "https://example.com/other-page" },
-        ]}
-      />
-    );
+    renderOpen([WEB_CITATION, { ...WEB_CITATION, url: "https://example.com/other-page" }]);
     const links = screen.getAllByText("Example Page").map((el) => el.closest("a"));
     expect(links).toHaveLength(2);
     expect(links.map((link) => link?.getAttribute("href"))).toEqual([
@@ -97,16 +95,42 @@ describe("SourceList", () => {
   });
 });
 
+describe("SourceList disclosure", () => {
+  it("starts collapsed behind a View Sources button with no source chips shown", () => {
+    render(<SourceList citations={[DOCUMENT_CITATION, WEB_CITATION]} />);
+    expect(screen.getByRole("button", { name: "View Sources" })).toHaveAttribute("aria-expanded", "false");
+    expect(document.querySelector('[data-chat="source"]')).toBeNull();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("shows clickable source links when View Sources is pressed", () => {
+    render(<SourceList citations={[DOCUMENT_CITATION, WEB_CITATION]} />);
+    const toggle = screen.getByRole("button", { name: "View Sources" });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("report.pdf, p.3")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Example Page" });
+    expect(link).toHaveAttribute("href", "https://example.com/page");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("hides the sources again when View Sources is pressed a second time", async () => {
+    renderOpen([DOCUMENT_CITATION, WEB_CITATION]);
+    const toggle = screen.getByRole("button", { name: "View Sources" });
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await waitFor(() => expect(document.querySelector('[data-chat="source"]')).toBeNull());
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
 describe("SourceList long titles", () => {
   const LONG =
     "GitHub - astral-sh/uv: An extremely fast Python package and project manager, written in Rust. · GitHub";
 
   it("keeps a long web title on one truncated line with its full name available", () => {
-    render(
-      <SourceList
-        citations={[{ ...WEB_CITATION, label: LONG, title: LONG, url: "https://github.com/astral-sh/uv" }]}
-      />
-    );
+    renderOpen([{ ...WEB_CITATION, label: LONG, title: LONG, url: "https://github.com/astral-sh/uv" }]);
     const link = screen.getByRole("link", { name: LONG });
     expect(link).toHaveAttribute("title", LONG);
     const text = screen.getByText(LONG);
@@ -115,7 +139,7 @@ describe("SourceList long titles", () => {
   });
 
   it("wraps a long document chip label so it reads in full", () => {
-    render(<SourceList citations={[{ ...DOCUMENT_CITATION, label: LONG }]} />);
+    renderOpen([{ ...DOCUMENT_CITATION, label: LONG }]);
     expect(screen.getByTitle(LONG)).toHaveStyle({ maxWidth: "100%", height: "auto" });
     expect(screen.getByText(LONG)).toHaveStyle({ whiteSpace: "normal", overflowWrap: "anywhere" });
   });
