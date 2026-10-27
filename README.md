@@ -147,7 +147,7 @@ Small parts, from `@hiro/niru-chat-kit/mui`:
 
 - `Message`: a user or assistant row with avatar, content and actions.
 - `ChatContainer`: a scrollable message area that follows new text, with a scroll-to-bottom button.
-- `Markdown`: formatted text, with optional maths. Raw HTML is not allowed.
+- `Markdown`: formatted text, with optional maths. Raw HTML is not allowed. `MarkdownComponentsProvider` sets element overrides for every `Markdown` the kit draws (see below).
 - `CodeBlock`: coloured code with a copy button.
 - `Loader`, `TextShimmer`, `ThinkingBar`: waiting and progress indicators.
 - `PromptInput`, `PromptSuggestion`, `FileUpload`: the input area, suggestion buttons and file picking.
@@ -160,10 +160,12 @@ Small parts, from `@hiro/niru-chat-kit/mui`:
 
 Ready-made blocks, from the same entry point:
 
-- `Conversation` shows the messages. `FullChat` combines messages, message box and history in one.
-- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`, `SlashCommandMenu`: the message box, suggestions and the slash-command list.
-- `ChatEmptyState`, `ChatHistorySidebar`: the screen before the first message, and the list of past chats.
-- `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`: the parts of one reply.
+- `Conversation` shows the messages. `FullChat` combines messages, message box and history in one. Give `Conversation` a `userAvatar` (a memoised element) to draw the person's own avatar at the end of their turns.
+- `Composer`, `ComposerPills`, `ComposerSuggestionsList`, `SuggestionPills`, `SlashCommandMenu`, `PromptQueue`: the message box, suggestions, the slash-command list and the prompts waiting behind a running turn.
+- `ChatEmptyState`, `ChatHistorySidebar`, `ConversationHeader`: the screen before the first message, the list of past chats and a title bar with Pin and Save.
+- `TurnTimeline`, `TurnSteps`, `TurnActions`, `TurnCopyButton`, `SourceList`, `FileChip`, `MessageNotes`, `MessageMedia`: the parts of one reply, including images, video and audio under it.
+- `CallPlayback`: a finished phone call with its recording and transcript.
+- `AgentAvatar`, `AVATAR_PRESETS`: 24 illustrated avatars for the agent.
 - `ApprovalCard`, `ApprovalFormFields`, `InterruptPrompt`, `InterruptEditForm`, `QuestionCard`, `MessageEditForm`: asking the person to approve, answer or edit. In `FullChat`, an agent's question is a `QuestionCard` in the thread (tap a suggested answer, press its number, or type in the normal message box); `InterruptPrompt` is the older bottom panel.
 
 ## Voice input
@@ -331,6 +333,37 @@ The row reads: plus (or paperclip), voice at `"start"`, chips, approval, toggles
   onRemovePastedText={(id) => setHeld((all) => all.filter((item) => item.id !== id))}
   mentions={tools} onMention={(tool) => track(tool.id)}
   approvalMode={{ value: mode, onChange: setMode, options }} />
+```
+
+## Prompt queue
+
+People can keep typing while a reply is still coming. `usePromptQueue` from the core holds those prompts and sends the next one each time the running turn ends. `PromptQueue` draws them above the text box under a "Queued" header, each with Edit (take it back into the box), Delete and, when you give `onSteer`, Steer (add it to the turn that is working without stopping it).
+
+Pass the hook's return straight to `Composer` or `FullChat` as `queue`. On `FullChat`, also pass `onQueue`: with both, Send during a turn calls `onQueue(text)` instead of waiting, and the box stays usable (Stop shows while it is empty). Without them nothing changes.
+
+```tsx
+const stream = useChatStream(transport);
+const running = stream.status === "connecting" || stream.status === "streaming";
+const queue = usePromptQueue({
+  running,
+  paused: stream.status === "needs_input", // hold the queue while the agent waits for an answer
+  onSend: (item) => stream.send(item.text),
+  onSteer: async (item) => ((await steerRun(item.text)) ? { ok: true } : { ok: false, reason: "The agent could not take it now." }),
+});
+
+<FullChat stream={stream} agent={agent} queue={queue} onQueue={(text) => queue.add(text)} />
+```
+
+`onSend` must start a new turn, so `running` turns true and later false again. A failed steer keeps the prompt queued and shows the reason under the list. Each item can carry your own `data` (attachments, mentions) next to its `text`. Change the words with `labels` on `PromptQueue`.
+
+## Markdown overrides everywhere
+
+`MarkdownComponentsProvider` takes `components` (the same element overrides `react-markdown` takes) and applies them to every `Markdown` the kit draws, including chat messages and timelines that you cannot pass props to directly. Overrides passed straight to a `Markdown` still win. Niru Chat uses it to hold back images from hosts it does not trust behind a "Load image" button.
+
+```tsx
+<MarkdownComponentsProvider components={{ img: GuardedImage }}>
+  <FullChat stream={stream} agent={agent} />
+</MarkdownComponentsProvider>
 ```
 
 ## Tool input and output
