@@ -119,11 +119,11 @@ export function Composer({
   narrowMoreItems,
   moreLabel,
   onStartCall,
-  callLabel,
-  callDisabled,
+  callLabel, callDisabled,
   answering,
   answeringLabel = "Answering:",
   answeringPlaceholder = "Type your answer",
+  inputLabel,
   commands,
   onCommand,
   commandsLabel = "Commands",
@@ -187,7 +187,7 @@ export function Composer({
   const slash = useSlashCommands({ value, onChange, commands, onCommand, onManage: onManageCommands, inputRef });
   // The mention list never opens with the slash list; it passes the textarea on to the slash list's own ref.
   const mention = useMentions({ value, onChange, mentions, onMention, suppressed: slash.open, inputRef: slash.inputRef });
-  const fieldAria = mention.open ? mention.inputProps : { ...mention.inputProps, ...slash.inputProps };
+  const fieldAria = { "aria-label": inputLabel, ...(mention.open ? mention.inputProps : { ...mention.inputProps, ...slash.inputProps }) };
   // An open list owns the box, so the autocomplete list stays out of its way.
   const composerSuggestions = useComposerSuggestions({
     value,

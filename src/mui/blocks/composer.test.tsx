@@ -228,3 +228,48 @@ describe("Composer answering a question", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Composer inputLabel", () => {
+  const props = { value: "", onChange: vi.fn(), onSubmit: vi.fn() };
+
+  it("names the message field with inputLabel", () => {
+    render(<Composer {...props} placeholder="Ask anything" inputLabel="Describe the tool" />);
+    const box = screen.getByRole("textbox", { name: "Describe the tool" });
+    expect(box).toHaveAttribute("aria-label", "Describe the tool");
+  });
+
+  it("keeps the default name without it", () => {
+    render(<Composer {...props} placeholder="Ask anything" />);
+    const box = screen.getByRole("textbox");
+    expect(box).not.toHaveAttribute("aria-label");
+    // Today the field has no accessible name of its own (the placeholder is not a name here).
+    expect(screen.getByRole("textbox", { name: "" })).toBe(box);
+  });
+
+  it("tells two composers apart", () => {
+    render(
+      <>
+        <Composer {...props} inputLabel="Describe the tool" />
+        <Composer {...props} inputLabel="Describe the audience" />
+      </>,
+    );
+    const a = screen.getByRole("textbox", { name: "Describe the tool" });
+    const b = screen.getByRole("textbox", { name: "Describe the audience" });
+    expect(a).not.toBe(b);
+  });
+
+  it("keeps the label while answering", () => {
+    render(<Composer {...props} inputLabel="Your answer" answering={{ question: "Where?" }} />);
+    expect(screen.getByRole("textbox", { name: "Your answer" })).toBeInTheDocument();
+  });
+
+  it("still opens the slash list with the label set", () => {
+    const commands = [{ id: "sum", name: "summarize", description: "Short version", insert: "Summarize this: " }];
+    render(<Harness commands={commands} inputLabel="Describe the tool" />);
+    const box = screen.getByRole("combobox", { name: "Describe the tool" });
+    fireEvent.change(box, { target: { value: "/", selectionStart: 1 } });
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(box).toHaveAttribute("aria-label", "Describe the tool");
+    expect(box).toHaveAttribute("aria-expanded", "true");
+  });
+});

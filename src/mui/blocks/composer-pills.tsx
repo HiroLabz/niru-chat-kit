@@ -1,7 +1,10 @@
 "use client";
 
+import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import { useId } from "react";
 import type { StackProps } from "@mui/material/Stack";
+import { useChatKitStyles } from "../theme";
 import { PromptSuggestion } from "../primitives/prompt-suggestion";
 
 export const FOLLOW_UPS_LABEL = "Suggested follow-ups";
@@ -31,6 +34,8 @@ export function SuggestionPills({
   suggestions,
   onSelect,
   label = "Suggestions",
+  disabled = false,
+  disabledReason,
   sx,
   className,
 }: {
@@ -38,20 +43,46 @@ export function SuggestionPills({
   onSelect: (text: string) => void;
   /** Accessible name of the group. */
   label?: string;
+  /** Turns every pill off: each is a disabled button and `onSelect` is never called. Default false. */
+  disabled?: boolean;
+  /** Why the pills are off, for example "Wait for the answer first". With `disabled`, screen readers
+   *  read it as the group's description. Ignored when `disabled` is false. */
+  disabledReason?: string;
   sx?: StackProps["sx"];
   className?: string;
 }) {
+  const { scheme } = useChatKitStyles();
+  const reasonId = useId();
   if (suggestions.length === 0) return null;
+  const reason = disabled && disabledReason ? disabledReason : undefined;
   return (
     <Stack
       direction="row"
       role="group"
       aria-label={label}
+      aria-describedby={reason ? reasonId : undefined}
       className={className}
       sx={[{ ...pillRowSx, gap: 0.75, mb: 1 }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
     >
+      {reason && (
+        <Box
+          id={reasonId}
+          component="span"
+          sx={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}
+        >
+          {reason}
+        </Box>
+      )}
       {suggestions.map((text) => (
-        <PromptSuggestion key={text} variant="pill" onSelect={onSelect}>
+        <PromptSuggestion
+          key={text}
+          variant="pill"
+          onSelect={onSelect}
+          disabled={disabled}
+          sx={scheme((c) => ({ "&.Mui-disabled": { opacity: 0.4, color: c.mutedText, borderColor: c.mutedText } }))}
+          // A real <button> so the disabled attribute is set, not only aria-disabled.
+          slotProps={disabled ? { chip: { component: "button" } } : undefined}
+        >
           {text}
         </PromptSuggestion>
       ))}

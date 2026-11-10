@@ -262,6 +262,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     answering: "Set while the agent waits on an answer. A chip above the text says \"Answering:\" and the question, and the placeholder changes. Typing and Send work as usual.",
     answeringLabel: "The chip's lead-in. Default: Answering:.",
     answeringPlaceholder: "The hint text while answering. Default: Type your answer.",
+    inputLabel: "The message field's name for screen readers, for example \"Describe the tool\". Without it the field has no name of its own beyond the placeholder.",
   },
   ComposerSuggestionsList: {
     controller: "What useComposerSuggestions returns: the matching suggestions and which one is highlighted.",
@@ -277,6 +278,8 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     suggestions: "The text of each pill.",
     onSelect: "Called with the pill's text when someone picks it.",
     label: "The group's name for screen readers.",
+    disabled: "Turns every pill off, for example while an answer is being generated. Each is a disabled button and onSelect is not called. Default: false.",
+    disabledReason: "Why the pills are off, such as \"Wait for the answer first\". Read by screen readers as the group's description while disabled.",
   },
   useComposerSuggestions: {
     value: "The text in the message box.",

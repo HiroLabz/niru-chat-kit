@@ -112,6 +112,12 @@ export type ComposerProps = {
   /** The placeholder while `answering`; default "Type your answer". */
   answeringPlaceholder?: string;
   /**
+   * The accessible name of the message field (`aria-label`), so a screen reader hears more than the placeholder and
+   * two composers on one page can be told apart. The same field is used while `answering`. Omitted: no label, as
+   * before. The slash and mention lists set no `aria-label`; if one ever does, theirs wins.
+   */
+  inputLabel?: string;
+  /**
    * Slash commands the app offers. Typing `/` as the first thing in the box opens a list above it; typing filters,
    * ArrowUp/ArrowDown move, Enter or Tab pick, Escape closes. The kit ships none. Omitted or empty: no list.
    */
