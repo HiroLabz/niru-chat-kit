@@ -53,7 +53,7 @@ export function Chat() {
 
 ## Streaming hooks
 
-- `useChatStream(transport, { params, initialMessages, initialConversationId, initialThreadId, branching })`: a streamed chat. Returns `messages`, `status`, `error`, `interrupt`, `followUps`, `turnActions`, `send`, `stop`, `retry`, `resume` and more. Example: `const { messages, send, stop } = useChatStream(transport);`
+- `useChatStream(transport, { params, initialMessages, initialConversationId, initialThreadId, initialInterrupt, branching })`: a streamed chat. Returns `messages`, `status`, `error`, `interrupt`, `followUps`, `turnActions`, `send`, `stop`, `retry`, `resume` and more. Example: `const { messages, send, stop } = useChatStream(transport);`
 - `UseChatStreamOptions`: the options above.
 - `useConversationBranches`, `UseConversationBranchesOptions`, `annotateFromMessages`: regenerate, edit and version switching against `ChatBranches`.
 - `useFollowUps()`: the AI follow-ups for the newest settled reply.
