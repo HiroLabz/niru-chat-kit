@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Core: `useChatStream` takes optional `initialInterrupt`, the question or approval a conversation is paused on, read once on mount beside `initialConversationId` and `initialThreadId`. The hook then starts with `status` `"needs_input"` and that `interrupt`, so a surface that reloads while a run waits on a person shows the card again and `resume` answers it. Without it nothing changes.
 - MUI skin: `Composer` takes optional `inputLabel`, the accessible name (`aria-label`) of the message field, so a screen reader hears more than the placeholder and a page with two composers can tell them apart. Without it nothing changes.
 - MUI skin: `SuggestionPills` takes optional `disabled` (default false) and `disabledReason`. With `disabled` every pill is a disabled button (`disabled` attribute, muted tokens, `onSelect` never called) and the group keeps its name; `disabledReason` becomes the group's accessible description through a visually hidden element. With `disabled` false both change nothing.
 - MUI skin: `SourceList` (the sources under a reply) is now collapsed by default behind a "View Sources" button (`aria-expanded`, chevron). Pressing it shows the same source chips, still clickable, and pressing it again hides them. The "Sources:" label is gone. New `SOURCE_LIST_COPY` in core.

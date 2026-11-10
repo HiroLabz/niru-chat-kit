@@ -141,6 +141,30 @@ describe("useChatStream", () => {
     expect(result.current.messages.at(-1)?.text).toBe("Done");
   });
 
+  it("starts paused on an initial interrupt and resumes it without a send", async () => {
+    const interrupt = { kind: "tool_approval", question: "Approve the refund?", options: [] };
+    const resume = vi.fn(async () => ({ status: "completed", message: "Done", conversation_id: "c1" }) as InvokeResponse);
+    const transport = transportOf({ resume });
+    const { result } = renderHook(() =>
+      useChatStream(transport, { initialConversationId: "c1", initialThreadId: "t1", initialInterrupt: interrupt })
+    );
+    expect(result.current.status).toBe("needs_input");
+    expect(result.current.interrupt).toEqual(interrupt);
+    await act(async () => result.current.resume("approve"));
+    expect(resume).toHaveBeenCalledWith(
+      { conversationId: "c1", threadId: "t1", interruptKind: "tool_approval", answer: "approve", values: undefined },
+      expect.any(AbortSignal)
+    );
+    expect(result.current.interrupt).toBeNull();
+    expect(result.current.status).toBe("done");
+  });
+
+  it("starts idle with no interrupt when none is given", () => {
+    const { result } = renderHook(() => useChatStream(transportOf()));
+    expect(result.current.status).toBe("idle");
+    expect(result.current.interrupt).toBeNull();
+  });
+
   it("keeps the question with the answer turn so the thread can fold them", async () => {
     const interrupt = { kind: "clarify", question: "Where will you stay?", options: ["Cebu City", "Mactan"] };
     const resume = vi.fn(async () => ({ status: "completed", message: "Done", conversation_id: "c1" }) as InvokeResponse);

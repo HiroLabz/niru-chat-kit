@@ -34,6 +34,7 @@ export function useChatStream<TParams extends object = Record<string, unknown>>(
     initialMessages,
     initialConversationId,
     initialThreadId,
+    initialInterrupt,
     branching = false,
   }: UseChatStreamOptions<TParams> = {}
 ) {
@@ -41,8 +42,8 @@ export function useChatStream<TParams extends object = Record<string, unknown>>(
   const { setMessages, pendingIdRef, appendTurn, dropPending } = transcript;
   const failure = useStreamFailure();
   const { record: recordFailure, clear: clearFailure } = failure;
-  const [status, setStatus] = useState<AgentStreamStatus>("idle");
-  const [interrupt, setInterrupt] = useState<Interrupt | null>(null);
+  const [status, setStatus] = useState<AgentStreamStatus>(() => (initialInterrupt ? "needs_input" : "idle"));
+  const [interrupt, setInterrupt] = useState<Interrupt | null>(() => initialInterrupt ?? null);
   const [result, setResult] = useState<InvokeResponse | null>(null);
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const { followUps, setFollowUps, clearFollowUps } = useFollowUps();

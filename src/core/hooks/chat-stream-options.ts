@@ -1,5 +1,5 @@
 import type { BranchReplay } from "./use-conversation-branches";
-import type { ChatMessage } from "../types";
+import type { ChatMessage, Interrupt } from "../types";
 
 /** What a failed turn replays on Retry, whole. */
 export type ChatReplay<TParams> =
@@ -23,6 +23,13 @@ export type UseChatStreamOptions<TParams> = {
    */
   initialConversationId?: string | null;
   initialThreadId?: string | null;
+  /**
+   * The question or approval this conversation is paused on, read once on mount
+   * alongside {@link initialThreadId}. A surface that reloads while a run waits on
+   * a person passes what the server still holds, so the card comes back and
+   * `resume` can answer it; without it the paused run could never be answered.
+   */
+  initialInterrupt?: Interrupt | null;
   /**
    * Offer regenerate, edit and version switching (needs `transport.branches`). After
    * each run the active branch is read back so the new turns carry their server ids;
