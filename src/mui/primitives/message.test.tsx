@@ -29,6 +29,47 @@ describe("Message", () => {
     expect(screen.getByRole("img", { name: "Hiro" })).toBeInTheDocument();
   });
 
+  it("puts the avatar beside the top of the turn", () => {
+    render(<Message data-testid="row">x</Message>);
+    expect(getComputedStyle(screen.getByTestId("row")).alignItems).toBe("flex-start");
+  });
+
+  it.each(["light", "dark"] as const)("lets the caller's sx colour the avatar in the %s scheme", (mode) => {
+    document.documentElement.classList.toggle("dark", mode === "dark");
+    try {
+      render(
+        <ThemeProvider theme={createTheme({ cssVariables: { colorSchemeSelector: "class" }, colorSchemes: { light: true, dark: true } })}>
+          <ChatKitProvider tokens={{ light: { assistantSurface: "rgb(1, 1, 1)" }, dark: { assistantSurface: "rgb(2, 2, 2)" } }}>
+            <Message>
+              <Message.Avatar initial="Q" sx={{ bgcolor: "rgb(214, 69, 108)", color: "rgb(255, 255, 255)" }} />
+            </Message>
+          </ChatKitProvider>
+        </ThemeProvider>
+      );
+      const avatar = screen.getByText("Q");
+      expect(getComputedStyle(avatar).backgroundColor).toBe("rgb(214, 69, 108)");
+      expect(getComputedStyle(avatar).color).toBe("rgb(255, 255, 255)");
+    } finally {
+      document.documentElement.classList.remove("dark");
+    }
+  });
+
+  it("colours an avatar without sx from the tokens of each scheme", () => {
+    render(
+      <ThemeProvider theme={createTheme({ cssVariables: { colorSchemeSelector: "class" }, colorSchemes: { light: true, dark: true } })}>
+        <ChatKitProvider tokens={{ light: { assistantSurface: "#0a0b0c" }, dark: { assistantSurface: "#0d0e0f" } }}>
+          <Message.Avatar initial="H" />
+        </ChatKitProvider>
+      </ThemeProvider>
+    );
+    const css = Array.from(document.querySelectorAll("style[data-emotion]"))
+      .map((tag) => tag.textContent ?? "")
+      .join("");
+    expect(css).toContain("--nck-message-avatar-surface:#0a0b0c");
+    expect(css).toMatch(/\.dark\)?[^{]*\{[^}]*--nck-message-avatar-surface:#0d0e0f/);
+    expect(css).toContain("background-color:var(--nck-message-avatar-surface)");
+  });
+
   it("marks the bubble by who spoke, taking it from the enclosing Message", () => {
     const { container } = render(
       <>

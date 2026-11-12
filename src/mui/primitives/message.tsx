@@ -27,6 +27,8 @@ const MessageContext = createContext<MessageFrom>("assistant");
 /**
  * One chat turn as a row: `Message.Avatar`, `Message.Content` and `Message.Actions`
  * laid out by who spoke. A user turn sits at the end of the row, an assistant turn at the start.
+ * The avatar lines up with the top of the turn, beside the first line of the bubble rather than
+ * the actions and timestamp under it.
  */
 export function Message({
   from = "assistant",
@@ -49,7 +51,7 @@ export function Message({
             display: "flex",
             gap: 1,
             justifyContent: from === "user" ? "flex-end" : "flex-start",
-            alignItems: "flex-end",
+            alignItems: "flex-start",
           },
           ...sxArray(sx),
         ]}
@@ -61,6 +63,14 @@ export function Message({
   );
 }
 
+const AVATAR_SURFACE = "--nck-message-avatar-surface";
+const AVATAR_TEXT = "--nck-message-avatar-text";
+
+/**
+ * The face beside a turn. Its default colours are custom properties set per colour scheme and
+ * read by one plain declaration, so a `bgcolor` or `color` in `sx` wins in the dark scheme as
+ * well as the light one (a dark-scheme declaration would out-rank the caller's plain one).
+ */
 function MessageAvatar({
   initial,
   src,
@@ -83,14 +93,15 @@ function MessageAvatar({
       alt={alt}
       className={className}
       sx={[
-        scheme((c) => ({
+        scheme((c) => ({ [AVATAR_SURFACE]: c.assistantSurface, [AVATAR_TEXT]: c.assistantText })),
+        {
           width: size,
           height: size,
           fontSize: size * 0.45,
           fontWeight: 600,
-          bgcolor: c.assistantSurface,
-          color: c.assistantText,
-        })),
+          bgcolor: `var(${AVATAR_SURFACE})`,
+          color: `var(${AVATAR_TEXT})`,
+        },
         ...sxArray(sx),
       ]}
     >

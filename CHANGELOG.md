@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- MUI skin: `Message.Avatar` takes its default colours from two custom properties (`--nck-message-avatar-surface`, `--nck-message-avatar-text`) set per colour scheme, so a `bgcolor` or `color` passed in `sx` now wins in the dark scheme too. Before, the kit's dark-scheme colours out-ranked the caller's and a coloured avatar turned grey or near-black in dark mode.
+- MUI skin: `Message` lines its items up at the top (`alignItems: flex-start`, was `flex-end`), so a turn's avatar sits beside the first line of the bubble instead of beside the actions and timestamp under it.
 - Core: `useChatStream` takes optional `initialInterrupt`, the question or approval a conversation is paused on, read once on mount beside `initialConversationId` and `initialThreadId`. The hook then starts with `status` `"needs_input"` and that `interrupt`, so a surface that reloads while a run waits on a person shows the card again and `resume` answers it. Without it nothing changes.
 - MUI skin: `Composer` takes optional `inputLabel`, the accessible name (`aria-label`) of the message field, so a screen reader hears more than the placeholder and a page with two composers can tell them apart. Without it nothing changes.
 - MUI skin: `SuggestionPills` takes optional `disabled` (default false) and `disabledReason`. With `disabled` every pill is a disabled button (`disabled` attribute, muted tokens, `onSelect` never called) and the group keeps its name; `disabledReason` becomes the group's accessible description through a visually hidden element. With `disabled` false both change nothing.
