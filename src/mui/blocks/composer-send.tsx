@@ -3,14 +3,13 @@
 import type { ReactNode } from "react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
-import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { alpha, darken } from "@mui/material/styles";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import { PromptInput } from "../primitives/prompt-input";
 import { ComposerCallButton } from "./composer-call";
-import { useChatKitStyles } from "../theme";
+import { readableOn, useChatKitStyles } from "../theme";
 
 /** The "Answering: <question>" chip above the text while the agent waits on an answer. */
 export function ComposerAnsweringChip({ question, label }: { question: string; label: string }) {
@@ -57,11 +56,21 @@ export function ComposerSendButton({
   const { scheme } = useChatKitStyles();
   if (busy && onStop) {
     return (
-      <Tooltip title="Stop">
-        <IconButton size="small" aria-label="Stop" onClick={onStop} sx={scheme((c) => ({ color: c.error }))}>
+      <PromptInput.Action tooltip="Stop">
+        <IconButton
+          size="small"
+          aria-label="Stop"
+          data-chat="stop"
+          onClick={onStop}
+          sx={scheme((c) => ({
+            bgcolor: c.error,
+            color: readableOn(c.error, ["#ffffff", "#000000"]),
+            "&:hover": { bgcolor: darken(c.error, 0.15) },
+          }))}
+        >
           <StopRoundedIcon fontSize="small" />
         </IconButton>
-      </Tooltip>
+      </PromptInput.Action>
     );
   }
   return (

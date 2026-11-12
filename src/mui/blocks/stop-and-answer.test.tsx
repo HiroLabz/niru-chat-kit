@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import type { ChatMessage } from "../../core/types";
 import { ChatKitProvider } from "../theme";
 import { Composer } from "./composer";
@@ -22,6 +23,39 @@ describe("Stop in place of Send while a turn runs (owner: Stop sat on the left o
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "also check pricing" } });
     expect(screen.getByRole("button", { name: "Send" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: "Stop" })).toBeNull();
+  });
+
+  it("is a filled red circle in the slot Send uses, never beside Send", () => {
+    const theme = createTheme();
+    const inBar = (value: string) => {
+      const view = render(
+        <ThemeProvider theme={theme}>
+          <ChatKitProvider>
+            <Composer value={value} onChange={vi.fn()} onSubmit={vi.fn()} running onStop={vi.fn()} />
+          </ChatKitProvider>
+        </ThemeProvider>,
+      );
+      const buttons = [...view.container.querySelectorAll('[data-chat="composer-bar"] button')];
+      const last = buttons.at(-1) as HTMLElement;
+      const color = getComputedStyle(last).backgroundColor;
+      const stops = screen.queryAllByRole("button", { name: "Stop" }).length;
+      const sends = screen.queryAllByRole("button", { name: "Send" }).length;
+      const labelled = last.getAttribute("aria-label");
+      const part = last.getAttribute("data-chat");
+      const index = buttons.length;
+      view.unmount();
+      return { labelled, part, color, stops, sends, index };
+    };
+    const stop = inBar("");
+    const send = inBar("steer");
+    expect(stop).toMatchObject({ labelled: "Stop", part: "stop", stops: 1, sends: 0 });
+    expect(send).toMatchObject({ labelled: "Send", part: "send", stops: 0, sends: 1 });
+    expect(stop.index).toBe(send.index);
+    const probe = document.createElement("div");
+    probe.style.backgroundColor = theme.palette.error.main;
+    document.body.append(probe);
+    expect(stop.color).toBe(getComputedStyle(probe).backgroundColor);
+    probe.remove();
   });
 
   it("is Send when nothing runs", () => {
