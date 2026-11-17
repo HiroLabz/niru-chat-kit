@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 vi.mock("shiki", () => ({ codeToHtml: () => new Promise(() => {}) }));
 
+import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { Markdown } from "./markdown";
 
 const TABLE = "| Customer name | Renewal date |\n|---|---|\n| Ada | 2026-11-18 |";
@@ -121,5 +122,20 @@ describe("MarkdownTable scrolling cues", () => {
     fireEvent.click(screen.getByRole("button", { name: "Expand table" }));
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Close" }));
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("fills the window even when the host theme sizes every dialog (Niru's are 500 px)", () => {
+    stubScroller({ scrollWidth: 2522, clientWidth: 1940, clientHeight: 400 });
+    const theme = createTheme({
+      components: { MuiDialog: { defaultProps: { fullWidth: true, maxWidth: false }, styleOverrides: { paper: { width: 500, maxWidth: "calc(100% - 64px)", borderRadius: 20 } } } },
+    });
+    render(
+      <ThemeProvider theme={theme}>
+        <Markdown>{TABLE}</Markdown>
+      </ThemeProvider>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand table" }));
+    const paper = document.querySelector<HTMLElement>("[data-chat-table-dialog]")!;
+    expect(paper).toHaveStyle({ width: "100%", maxWidth: "none", height: "100%", borderRadius: "0" });
   });
 });

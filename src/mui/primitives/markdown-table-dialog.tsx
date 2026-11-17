@@ -43,7 +43,21 @@ export function MarkdownTableDialog({
       slotProps={{
         paper: {
           "data-chat-table-dialog": "",
-          sx: scheme((c) => ({ bgcolor: c.surface, color: c.text, backgroundImage: "none", display: "flex", flexDirection: "column" })),
+          // Set in full: a host theme may size every dialog's paper (Niru's is 500 px wide), and
+          // this one must fill the window whatever the theme says.
+          sx: scheme((c) => ({
+            bgcolor: c.surface,
+            color: c.text,
+            backgroundImage: "none",
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            maxWidth: "none",
+            height: "100%",
+            maxHeight: "none",
+            m: 0,
+            borderRadius: 0,
+          })),
         } as object,
       }}
     >
