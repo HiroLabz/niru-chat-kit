@@ -161,7 +161,10 @@ function ChatContainerRoot({
 
   return (
     <ChatContainerContext.Provider value={context}>
-      <Box sx={{ position: "relative", flex: 1, display: "flex", minHeight: 0 }}>
+      {/* `minWidth: 0` here and on the log: a flex item keeps at least its content's min-content
+          width, so in a host's flex row one wide table (which keeps its natural width and scrolls)
+          made the whole transcript that wide and every earlier reply ran past the panel's edge. */}
+      <Box sx={{ position: "relative", flex: 1, display: "flex", minHeight: 0, minWidth: 0 }}>
         <Box
           ref={logRef}
           onWheel={(event) => {
@@ -219,6 +222,7 @@ function ChatContainerRoot({
           sx={[
             {
               flex: 1,
+              minWidth: 0,
               display: "flex",
               flexDirection: "column",
               overflowY: "auto",

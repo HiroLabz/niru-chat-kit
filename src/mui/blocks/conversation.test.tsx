@@ -275,3 +275,27 @@ describe("Conversation questions", () => {
     expect(screen.queryByRole("button", { name: "Change" })).not.toBeInTheDocument();
   });
 });
+
+describe("Conversation in a host's flex row", () => {
+  // jsdom does no layout, so this pins the rule; a browser shows the effect. A flex item keeps at
+  // least its content's min-content width unless it says otherwise, so in a host's flex row a
+  // reply with a wide table (which keeps its natural width and scrolls) widened the whole
+  // transcript and earlier replies ran past the panel's edge.
+  it("lets every box between a host's flex row and the turns shrink, so a wide table scrolls on its own", () => {
+    const table = "| a | b |\n|---|---|\n| 1 | 2 |";
+    render(
+      <div data-testid="host" style={{ display: "flex" }}>
+        <Conversation messages={[user, { id: "a1", role: "assistant", text: table }]} />
+      </div>
+    );
+    const host = screen.getByTestId("host");
+    let box: HTMLElement | null = screen.getByRole("log");
+    const chain: HTMLElement[] = [];
+    while (box && box !== host) {
+      chain.push(box);
+      box = box.parentElement;
+    }
+    expect(chain.length).toBeGreaterThan(1);
+    for (const node of chain) expect(getComputedStyle(node).minWidth).toMatch(/^0(px)?$/);
+  });
+});
