@@ -225,6 +225,15 @@ describe("Conversation", () => {
     const { container } = render(<Conversation messages={[user]} columnMaxWidth={760} />);
     expect(container.querySelector('[role="log"]')).not.toBeNull();
   });
+
+  it("lets wide tables break out of the column unless wideTables is column", () => {
+    const { container, rerender } = render(<Conversation messages={[user]} columnMaxWidth={760} />);
+    expect(container.querySelector("[data-chat-wide-area]")).not.toBeNull();
+    rerender(<Conversation messages={[user]} columnMaxWidth={760} wideTables="column" />);
+    expect(container.querySelector("[data-chat-wide-area]")).toBeNull();
+    rerender(<Conversation messages={[user]} wideTables="breakout" />);
+    expect(container.querySelector("[data-chat-wide-area]")).toBeNull();
+  });
 });
 
 describe("Conversation questions", () => {

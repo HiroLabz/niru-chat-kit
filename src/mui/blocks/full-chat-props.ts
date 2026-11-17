@@ -77,6 +77,8 @@ export type FullChatProps = {
   mediaProps?: ConversationProps["mediaProps"];
   /** Centres the turns and the composer in a column at most this many px wide; see `Conversation`. Omitted: full width. */
   columnMaxWidth?: number;
+  /** Whether a table wider than the column grows beside it (`"breakout"`, default) or stays in it (`"column"`); see `Conversation`. */
+  wideTables?: ConversationProps["wideTables"];
   /** Replaces the kit's greeting (avatar plus one line) before the first message, for an app that draws its own hello. */
   emptyState?: ReactNode;
   /** Disables the composer (and the starter and follow-up pills), for example when the chat may not send. Default: enabled. */

@@ -95,6 +95,13 @@ export type ConversationProps = {
    */
   columnMaxWidth?: number;
   /**
+   * Where a markdown table wider than the column goes when `columnMaxWidth` is set. `"breakout"`
+   * (the default) lets it grow into the free space beside the column before it scrolls;
+   * `"column"` keeps it inside the column with the reply, where it scrolls on its own (with the
+   * fade, scrollbars and Expand button). Without `columnMaxWidth` there is no column to leave.
+   */
+  wideTables?: "breakout" | "column";
+  /**
    * The id of a message to bring into view: the transcript scrolls to it (inside its own
    * scroll area, never the page) and the turn is tinted with the accent for about 2.5
    * seconds, or outlined without a fade when the person prefers reduced motion. It runs
@@ -149,6 +156,7 @@ export function Conversation({
   renderMedia,
   mediaProps,
   columnMaxWidth,
+  wideTables = "breakout",
   highlightMessageId,
   question,
   foldAnswers = false,
@@ -218,7 +226,7 @@ export function Conversation({
       holdKey={highlightFound ? highlightMessageId : null}
       sx={[{ gap: 1.5, p: 2 }, ...(columnMaxWidth ? [columnPadding(columnMaxWidth)] : [])]}
       // In a centred column, a reply's wide table may use the free space beside it (see `MarkdownTable`).
-      {...(columnMaxWidth ? { [WIDE_AREA_ATTRIBUTE]: "" } : {})}
+      {...(columnMaxWidth && wideTables === "breakout" ? { [WIDE_AREA_ATTRIBUTE]: "" } : {})}
       {...rootProps}
     >
       {messages.map((message) => {

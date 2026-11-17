@@ -54,6 +54,7 @@ export function FullChat({
   renderMedia,
   mediaProps,
   columnMaxWidth,
+  wideTables,
   emptyState,
   disabled = false,
   errorAction,
@@ -201,6 +202,7 @@ export function FullChat({
             renderMedia={renderMedia}
             mediaProps={mediaProps}
             columnMaxWidth={columnMaxWidth}
+            wideTables={wideTables}
             highlightMessageId={highlightMessageId}
             foldAnswers
             question={
