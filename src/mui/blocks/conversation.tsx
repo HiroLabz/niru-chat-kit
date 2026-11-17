@@ -8,6 +8,7 @@ import { replyEndsWithQuestion } from "../../core/question";
 import type { MediaItem } from "../../core/media";
 import type { ChatMessage, ChatTurnActions, Interrupt } from "../../core/types";
 import { ChatContainer } from "../primitives/chat-container";
+import { WIDE_AREA_ATTRIBUTE } from "../primitives/markdown-table";
 import { Message } from "../primitives/message";
 import { ThinkingBar } from "../primitives/thinking-bar";
 import { useChatKitStyles } from "../theme";
@@ -87,8 +88,10 @@ export type ConversationProps = {
   mediaProps?: Omit<MessageMediaProps, "items">;
   /**
    * Centres the turns in a column at most this many px wide (never closer than 24 px to the
-   * edge) while the transcript itself, and its scrollbar, still span the full width. Omitted
-   * keeps the turns edge to edge.
+   * edge) while the transcript itself, and its scrollbar, still span the full width. A markdown
+   * table wider than the column grows past it into the free space on both sides (centred on the
+   * column, up to the transcript's width less 24 px a side) before it scrolls; prose, avatars
+   * and actions keep the column. Omitted keeps the turns edge to edge.
    */
   columnMaxWidth?: number;
   /**
@@ -214,6 +217,8 @@ export function Conversation({
       rearmKey={rearmKey}
       holdKey={highlightFound ? highlightMessageId : null}
       sx={[{ gap: 1.5, p: 2 }, ...(columnMaxWidth ? [columnPadding(columnMaxWidth)] : [])]}
+      // In a centred column, a reply's wide table may use the free space beside it (see `MarkdownTable`).
+      {...(columnMaxWidth ? { [WIDE_AREA_ATTRIBUTE]: "" } : {})}
       {...rootProps}
     >
       {messages.map((message) => {

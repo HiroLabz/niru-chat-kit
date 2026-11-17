@@ -129,7 +129,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     renderUserExtras: RENDER_USER_EXTRAS,
     footer: "Content placed after the last message, such as a notice. It scrolls along with the messages.",
     onDownloadFile: ON_DOWNLOAD,
-    columnMaxWidth: "Keeps the messages in a centred column no wider than this many pixels. The scrollbar still sits at the edge of the window. Leave it out to let messages fill the width.",
+    columnMaxWidth: "Keeps the messages in a centred column no wider than this many pixels. The scrollbar still sits at the edge of the window. A table wider than the column uses the free space on both sides before it scrolls. Leave it out to let messages fill the width.",
     highlightMessageId: "The id of a message to bring into view. The list scrolls to it without moving the page and tints it for about two and a half seconds (a still outline if the system asks for less motion). It runs again each time the value changes.",
     question: "A question the agent is waiting on. It is drawn as a QuestionCard after the last message. If the newest reply already ends with the question, the card does not repeat it.",
     foldAnswers: "Draws a message that answered a question (it has answersQuestion) as one line, the question and the answer, instead of a bubble. Default: false.",

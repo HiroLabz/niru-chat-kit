@@ -16,6 +16,7 @@ import type { ChatKitColorTokens, ChatKitTokens } from "../../core/tokens";
 import { useChatKitStyles } from "../theme";
 import { CodeBlock } from "./code-block";
 import { Image } from "./image";
+import { MarkdownTable, markdownTableStyles } from "./markdown-table";
 import { sxArray } from "./sx";
 
 function flattenToText(node: ReactNode): string {
@@ -53,6 +54,7 @@ const defaultComponents: Components = {
     if (typeof src !== "string" || src.length === 0) return null;
     return <Image src={src} alt={alt} />;
   },
+  table: MarkdownTable,
 };
 
 /**
@@ -108,19 +110,7 @@ export function markdownStyles(c: ChatKitColorTokens, all: ChatKitTokens) {
       overflowX: "auto",
       "& code": { bgcolor: "transparent", px: 0, py: 0 },
     },
-    // A table cannot wrap its way into a narrow column the way a paragraph can: a chat
-    // bubble can be ~254px wide, so eight columns of `display: table` were squeezed to
-    // ~30px each and every cell broke one character per line. `display: block` +
-    // `width: max-content` lets the table keep its natural column widths and scroll on
-    // its own axis instead, exactly as `pre` above already does.
-    "& table": {
-      borderCollapse: "collapse",
-      my: 1,
-      display: "block",
-      width: "max-content",
-      maxWidth: "100%",
-      overflowX: "auto",
-    },
+    ...markdownTableStyles,
     // A bubble may set `overflowWrap: anywhere` so a long identifier cannot widen the
     // column. Inside a table that is the wrong trade: the table scrolls now, so cells
     // break on word boundaries like normal text.
