@@ -54,7 +54,7 @@ const FULL_PAGE: Record<string, Box> = {
   "[data-testid=avatar]": { left: 964, width: 36, top: 0, height: 36 },
   "[data-chat-bubble] > div": { left: 1008, width: 668 },
   "[data-chat-table]": { left: 1008, width: 668, top: 0, height: 300 },
-  "[data-chat-table] > table": { left: 364, width: 1912, top: 0, height: 300 },
+  "[data-chat-table-frame]": { left: 364, width: 1912, top: 0, height: 300 },
 };
 
 afterEach(() => vi.restoreAllMocks());

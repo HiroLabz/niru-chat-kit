@@ -101,7 +101,7 @@ export const COMPONENT_COPY: Record<string, string> = {
   MessageContent: "The message text.",
   MessageActions: "The row of small buttons under a message.",
   MessageAction: "One small button under a message, with a tooltip.",
-  Markdown: "Draws markdown text. While a reply streams in, only the part still growing is redrawn, which keeps long replies smooth.",
+  Markdown: "Draws markdown text. While a reply streams in, only the part still growing is redrawn, which keeps long replies smooth. A table too wide for its space shows that it scrolls: the side with more columns fades, its scrollbar stays visible, and an Expand button opens it over the whole window.",
   CodeBlock: "A block of code with a language label and a copy button. Use it ready-made with code and language, or build the header yourself.",
   CodeBlockGroup: "The row above the code: the language on the left and buttons on the right.",
   CodeBlockCode: "The code itself. It shows as plain text first and gets colours once the highlighter loads. If that fails, the plain text stays.",
@@ -129,7 +129,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
     renderUserExtras: RENDER_USER_EXTRAS,
     footer: "Content placed after the last message, such as a notice. It scrolls along with the messages.",
     onDownloadFile: ON_DOWNLOAD,
-    columnMaxWidth: "Keeps the messages in a centred column no wider than this many pixels. The scrollbar still sits at the edge of the window. A table wider than the column uses the free space on both sides before it scrolls. Leave it out to let messages fill the width.",
+    columnMaxWidth: "Keeps the messages in a centred column no wider than this many pixels. The scrollbar still sits at the edge of the window. A table wider than the column uses the free space on both sides before it scrolls, and then shows a fade, a visible scrollbar and an Expand button. Leave it out to let messages fill the width.",
     highlightMessageId: "The id of a message to bring into view. The list scrolls to it without moving the page and tints it for about two and a half seconds (a still outline if the system asks for less motion). It runs again each time the value changes.",
     question: "A question the agent is waiting on. It is drawn as a QuestionCard after the last message. If the newest reply already ends with the question, the card does not repeat it.",
     foldAnswers: "Draws a message that answered a question (it has answersQuestion) as one line, the question and the answer, instead of a bubble. Default: false.",
@@ -684,7 +684,7 @@ export const PROP_COPY: Record<string, Record<string, string>> = {
   Markdown: {
     children: "The markdown text.",
     id: "An optional identifier for this text. You can leave it out.",
-    components: "Your own components to draw markdown elements, by element name. They replace the kit's own code, pre and img.",
+    components: "Your own components to draw markdown elements, by element name. They replace the kit's own code, pre, img and table.",
     onBlockRender: "For the kit's own tests. You do not need it.",
   },
   CodeBlock: {
