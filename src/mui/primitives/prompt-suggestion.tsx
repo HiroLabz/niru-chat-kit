@@ -141,12 +141,16 @@ export function PromptSuggestion({
       onClick={() => onSelect(children)}
       className={className}
       sx={[
-        scheme((c) => ({
+        scheme((c, all) => ({
           maxWidth: "100%",
           height: "auto",
-          color: c.accent,
-          borderColor: alpha(c.accent, 0.7),
-          "&:hover, &.MuiChip-clickable:hover": { bgcolor: alpha(c.accent, 0.04) },
+          color: c.chipText ?? c.accent,
+          borderColor: c.chipBorder ?? alpha(c.accent, 0.7),
+          ...(c.chipSurface ? { bgcolor: c.chipSurface } : {}),
+          ...(all.chipRadius === undefined ? {} : { borderRadius: `${all.chipRadius}px` }),
+          "&:hover, &.MuiChip-clickable:hover": c.chipSurface
+            ? { bgcolor: c.chipSurface, borderColor: c.chipText ?? c.accent }
+            : { bgcolor: alpha(c.accent, 0.04) },
           "& .MuiChip-label": {
             whiteSpace: "normal",
             overflowWrap: "anywhere",

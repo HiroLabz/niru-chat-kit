@@ -1,4 +1,4 @@
-import { CHAT_KIT_COLOR_TOKEN_NAMES, type ChatKitTokenOverrides } from "../../core/tokens";
+import { CHAT_KIT_ALL_COLOR_TOKEN_NAMES, type ChatKitTokenOverrides } from "../../core/tokens";
 
 let registered: ChatKitTokenOverrides | undefined;
 
@@ -20,7 +20,7 @@ function expand(overrides: ChatKitTokenOverrides): ChatKitTokenOverrides {
   const shared: Record<string, unknown> = {};
   const colors: Record<string, unknown> = {};
   for (const [name, value] of Object.entries(flat)) {
-    if ((CHAT_KIT_COLOR_TOKEN_NAMES as readonly string[]).includes(name)) colors[name] = value;
+    if (CHAT_KIT_ALL_COLOR_TOKEN_NAMES.includes(name)) colors[name] = value;
     else shared[name] = value;
   }
   return { ...shared, light: { ...colors, ...light }, dark: { ...colors, ...dark } };

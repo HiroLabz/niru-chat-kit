@@ -6,6 +6,7 @@ import { useTheme } from "@mui/material/styles";
 import type { CSSObject, SxProps, Theme } from "@mui/material/styles";
 import {
   CHAT_KIT_COLOR_TOKEN_NAMES,
+  CHAT_KIT_PART_COLOR_TOKEN_NAMES,
   chatKitVariableName,
   type ChatKitColorTokens,
   type ChatKitTokenOverrides,
@@ -19,9 +20,14 @@ const ChatKitTokensContext = createContext<ChatKitTokens | null>(null);
 type SxFunction = Extract<SxProps<Theme>, (theme: Theme) => unknown>;
 type StyleObject = CSSObject;
 
-/** The `--nck-*` custom properties for one colour scheme. */
+/** The `--nck-*` custom properties for one colour scheme; an unset part colour writes none. */
 export function colorVariables(colors: ChatKitColorTokens): Record<string, string> {
-  return Object.fromEntries(CHAT_KIT_COLOR_TOKEN_NAMES.map((name) => [chatKitVariableName(name), colors[name]]));
+  const base = CHAT_KIT_COLOR_TOKEN_NAMES.map((name) => [chatKitVariableName(name), colors[name]] as const);
+  const parts = CHAT_KIT_PART_COLOR_TOKEN_NAMES.flatMap((name) => {
+    const value = colors[name];
+    return value === undefined ? [] : [[chatKitVariableName(name), value] as const];
+  });
+  return Object.fromEntries([...base, ...parts]);
 }
 
 function sharedVariables(tokens: ChatKitTokens): Record<string, string> {

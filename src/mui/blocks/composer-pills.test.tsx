@@ -92,4 +92,17 @@ describe("ComposerPills", () => {
       expect(onSelect).toHaveBeenCalledWith("Two");
     });
   });
+
+  it("shows a visible heading before the starters, keeping the group's accessible name", () => {
+    render(
+      <ComposerPills followUps={[]} starters={["a"]} hasMessages={false} onSend={vi.fn()} onFill={vi.fn()} startersHeading="Suggested:" />
+    );
+    expect(screen.getByRole("group", { name: "Suggestions" })).toHaveTextContent(/^Suggested:a$/);
+    expect(screen.getByText("Suggested:")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("shows no heading unless asked", () => {
+    render(<SuggestionPills suggestions={["a"]} onSelect={vi.fn()} />);
+    expect(screen.getByRole("group", { name: "Suggestions" })).toHaveTextContent(/^a$/);
+  });
 });

@@ -2,6 +2,7 @@
 
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
 import { useId } from "react";
 import type { StackProps } from "@mui/material/Stack";
 import { useChatKitStyles } from "../theme";
@@ -34,6 +35,7 @@ export function SuggestionPills({
   suggestions,
   onSelect,
   label = "Suggestions",
+  heading,
   disabled = false,
   disabledReason,
   sx,
@@ -43,6 +45,8 @@ export function SuggestionPills({
   onSelect: (text: string) => void;
   /** Accessible name of the group. */
   label?: string;
+  /** Visible words before the first pill, for example "Suggested:". The group keeps `label` as its name. */
+  heading?: string;
   /** Turns every pill off: each is a disabled button and `onSelect` is never called. Default false. */
   disabled?: boolean;
   /** Why the pills are off, for example "Wait for the answer first". With `disabled`, screen readers
@@ -73,6 +77,16 @@ export function SuggestionPills({
           {reason}
         </Box>
       )}
+      {heading ? (
+        <Typography
+          component="span"
+          variant="body2"
+          aria-hidden
+          sx={scheme((c) => ({ color: c.mutedText, alignSelf: "center", whiteSpace: "nowrap", mr: 0.75 }))}
+        >
+          {heading}
+        </Typography>
+      ) : null}
       {suggestions.map((text) => (
         <PromptSuggestion
           key={text}
@@ -102,15 +116,18 @@ export function ComposerPills({
   hasMessages,
   onSend,
   onFill,
+  startersHeading,
 }: {
   followUps: string[];
   starters: string[];
   hasMessages: boolean;
   onSend: (text: string) => void;
   onFill: (text: string) => void;
+  /** Visible words before the starter prompts, for example "Suggested:". */
+  startersHeading?: string;
 }) {
   if (followUps.length > 0) {
     return <SuggestionPills suggestions={followUps} onSelect={onSend} label={FOLLOW_UPS_LABEL} />;
   }
-  return hasMessages ? null : <SuggestionPills suggestions={starters} onSelect={onFill} />;
+  return hasMessages ? null : <SuggestionPills suggestions={starters} onSelect={onFill} heading={startersHeading} />;
 }

@@ -238,10 +238,11 @@ export function Composer({
         maxRows={maxRows}
         slotProps={{ root: { onKeyDown: handleEscape, "data-chat": "composer", ...rootProps } as never }}
         sx={scheme((c, all) => ({
-          borderRadius: `${all.radius * COMPOSER_RADIUS_SCALE}px`,
+          borderRadius: `${all.composerRadius ?? all.radius * COMPOSER_RADIUS_SCALE}px`,
           border: 1,
-          borderColor: c.border,
-          bgcolor: c.surface,
+          borderColor: c.composerBorder ?? c.border,
+          bgcolor: c.composerSurface ?? c.surface,
+          ...(c.placeholderText ? { "& textarea::placeholder": { color: c.placeholderText, opacity: 1 } } : {}),
           color: c.text,
           fontFamily: all.fontFamily,
           px: 1.5,
